@@ -68,12 +68,6 @@ if ~isequal(z, zmds)
 end
     
 
-%% Convert the matrix vmodes into a 1xnmds cell array,
-% which is the appropriate format 
-
-imf.modelinput = mat2cell(vmodes, length(z), ones(1, nmds));
-
-
 %% Do the modal fit:
 
 % Pre-allocate space for the modal amplitudes:
@@ -91,13 +85,11 @@ for i = 1:n
         warning(['Column i = ' num2str(i) ' does not have ' ...
                  'enough non-nan data points'])
         continue   % skip the fit and go to the next iteration of the loop
-    end
+    end   
     
     % Project the ith column of x onto the normal modes:
-    [~, m] = myleastsqrs(z, x(:, i), imf);
-    
-    % I may as well just do:
-% % % %     m = ( G(lgood,  :)' * G(lgood,  :)) \ ( G(lgood,  :)' * x);
+    m = ( vmodes(lgood,  :)' * vmodes(lgood,  :)) \ ...
+        ( vmodes(lgood,  :)' * x(lgood, i));
     
     % Assign m to ith column of mdsAmp:
     mdsAmp(:, i) = m;
