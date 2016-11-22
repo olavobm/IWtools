@@ -1,7 +1,5 @@
 function [MdsProf, MdsAmp, VarMds] = modalDecomp(nmds, zN2, N2, D, varStruct, N2tandwnd)
-% MODALDECOMPOSITION(zN2, N2, D, zH, varH, zV, var, N2window)
-%
-% varStruct????
+% [MdsProf, MdsAmp, VarMds] = MODALDECOMPOSITION(zN2, N2, D, zH, varH, zV, var, N2window)
 %
 %   inputs:
 %       - nmds: number of BAROCLINIC(???) modes to fit (FIX THIS PURPOSE!!!)
@@ -27,27 +25,15 @@ function [MdsProf, MdsAmp, VarMds] = modalDecomp(nmds, zN2, N2, D, varStruct, N2
 %       - MdsAmp: struct variable with modal amplitudes.
 %       - VarMds: struct variable with projection of the variables
 %                 onto modes.
-% I COULD POSSIBLY CHANGE THE ORDER OF THE OUTPUT.
 %
 % Function MODALDECOMPOSITION does ....
 %
 % HOW DO I DEAL WITH THE 0TH MODE OF VERTICAL-TYPE EIGENFUNCTIONS???
 % I WOULD HAVE TO CHECK WHETHER THE VARIABLE HAS DEPTH-INTEGRAL ~= 0
 %
-% If N2 is a matrix and no window is specified, then normal modes are
-% computed for every column of N2. The part that may take a long time
-% 
-% THE REALLY AWESOME THING, WOULD BE TO INCORPORATE MATRIX INPUT INTO
-% MYLEASTSQRS FUNCTION, SUCH THAT MODAL PROJECTION CAN BE DONE RIGHT
-% AWAY FOR TIME-CONSTANT N2!!! MAKE SURE IT WORKS..... which I can easily
-% test (for xgd matrix) with:
-%                   m = ( G' * G) \ ( G' * xgd);
-%
-% -------------------------------------------------------------------------
-% Does it make faster/slower if I rearrange the parenthesis above???
-% IN WHICH CASE, I MUST NOT HAVE NANS OR HAVE NANS AT THE SAME DEPTHS FOR
-% ALL TIMES
-% -------------------------------------------------------------------------
+% If N2 is a matrix and no window is specified, then normal modes
+% are computed for every column of N2. This greatly increases the
+% computational time.
 %
 % Olavo Badaro Marques, 18/Nov/2016.
 
@@ -181,33 +167,45 @@ end
 % indN2col VARIABLE....
 
 
-%% Pre-allocate space for modal amplitude variables:
+%% Pre-allocate space for the output variables:
 
-
-% Loop through all variable names and pre-allocate
-% space for amplitude variables:
-for i = 1:length(namesallvar)
+% Loop through variable names:
+for i1 = 1:length(namesallvar)
     
-    if lforHvar(i)
-        nrows_aux = nmds + 1;
+    % Check whether to include the "barotropic mode":
+    if lforHvar(i1)
+        vecmds = 0:nmds;
     else
-        nrows_aux = nmds;
+        vecmds = 1:nmds;
     end
     
-    MdsAmp.(namesallvar{i}) = NaN(nrows_aux, nprofs);
-   
+    % Pre-allocate space for modal structures output:
+%     MdsProf. = NaN(length)
+% I would love to compute the modal variables by multiplying structure and
+% amplitude....except that different variables may have different z grid...
+% Make such that the output is the zN2aug grid. However, it may even be
+% faster to interpolate the modal structure at the end.
+    
+    % Pre-allocate space for modal amplitude output:
+    MdsAmp.(namesallvar{i1}) = NaN(length(vecmds), nprofs);
+    
+    % Loop through modes and pre-allocate space for modal variables:
+    for i2 = 1:length(vecmds)
+        % NaN matrix with the same size as correspondent input:
+        VarMds.(namesallvar{i1}).(['md' num2str(vecmds(i2)) '']) = ...
+            NaN(size(varStruct.(typesallvar{i1}).(namesallvar{i1})));
+    end
 end
 
 
 %% Computing modal amplitudes -- this is the hard part of the code:
 
-% lN2toModes = true;  I'm not sure if this is relevant anymore.
-
 zN2aug = [0; zN2; D];
 
 % -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
+% If I'm going to loop through every profile anyway, I should definitely
+% rearrange this loop. Well....if there are no gaps, I definitely don't
+% want to loop through profiles:
 
 if ndiffMds==nprofs
     % BRUTE FORCE - FIT FOR EVERY PROFILE
@@ -217,10 +215,7 @@ if ndiffMds==nprofs
         [Hmodes, Vmodes, ~] = inertGravVmodes(zN2, D, ...
                                               N2(:, indN2col(i1)), nmds);
 
-        for i2 = 1:nvars     
-            % I MUST ADD THE FUNCTIONALIY OF FITVMODES TO OUTPUT MODES
-            % WHICH LATER I WON'T HAVE TO INTERPOLATE THE MODAL
-            % STRUCTURES.....
+        for i2 = 1:nvars
             
             % Check which mode do we need to fit and use "Hmodes" or
             % "Vmodes(:, 2:end)". I can probably do something better than
@@ -270,7 +265,14 @@ else
         
         for i2 = 1:nvars
             
-            % Must implement the efficient version later:
+            if lforHvar(i2)
+                vecmds = 0:nmds;
+            else
+                vecmds = 1:nmds;
+            end
+            
+            % Must implement the efficient version later... or I could
+            % simply loop through all columns and use fitVmodes
             [colsaux, rnanaux] = sepColsNanPos(varStruct.(typesallvar{i2}).(namesallvar{i2}));
             
             % SHOULD INCLUDE AN OPTION TO AVOID DOING THE ABOVE IN THE CASE
@@ -296,76 +298,25 @@ else
                 m = ( vmds_aux' * vmds_aux) \ ( vmds_aux' * ...
                         varStruct.(typesallvar{i2}).(namesallvar{i2})(rokgood, colsaux{i3}) );
                 
-                MdsAmp.(namesallvar{i})(:, colsaux{i3}) = m;
+                MdsAmp.(namesallvar{i2})(:, colsaux{i3}) = m;
+                
+                for i4 = 1:length(vecmds)
+                
+                    VarMds.(namesallvar{i1}).(['md' num2str(vecmds(i4)) ''])(:, colsaux{i3}) = ...
+                        vmodesinterp(:, i4) * m(i4, :);
+                end
+                
             end
-            
-            
-            
-            
-%             if lforHvar{i2}
-%                 
-%                 MdsAmp.(namesallvar(i))(:, i2) = fitVmodes(zvecs{i2},   ...
-%                   varStruct.(typesallvar{i2}).(namesallvar{i2})(:, i1), ...
-%                   Hmodes, zN2aug);
-%               
-%             else
-%                
-%                 MdsAmp.(namesallvar(i))(:, i2) = fitVmodes(zvecs{i2},   ...
-%                   varStruct.(typesallvar{i2}).(namesallvar{i2})(:, i1), ...
-%                   Vmodes(:, 2:end), zN2aug);
-%                 
-%             end
-            
-            
-            
+                        
         end
-        
-        
-        
-% %         eta_mdsAmp(:, i) = fitVmodes(zlvs(2:end-1), MMP.etaM2(:, i), ...
-% %                                      Vmodes(:, 2:end), veczmds);
-% % 
-% %         u_mdsAmp(:, i) = fitVmodes(MMP.z, MMP.uM2(:, i), ...
-% %                                    Hmodes, veczmds);
-
-        
+                
     end
-
 end
 toc
  
-% WHY IS THERE A COLUMN OF NAN??????
+% WHY IS THERE A COLUMN OF NAN for u somewhere...?????? (it is about at the
+% maximum of mode-1, somewhere,  around yday 38)
 
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
 
 keyboard
-
-%%
-
-Vmdsinterp = NaN(length(MMP.z), nmds);
-Hmdsinterp = NaN(length(MMP.z), nmds+1);
-
-% ------------------------------------------------------
-% THE ASSIGNMENT BELOW IS WRONG FOR VMODES!!!
-% I'M TAKING THE 0TH VERTICAL MODE FOR COMPUTING
-% 1ST MODE ETA AND PRESSURE.
-keyboard
-% ------------------------------------------------------
-
-for i = 1:(nmds+1)
-    
-    if i<(nmds+1)
-        Vmdsinterp(:, i) = interp1(veczmds, Vmodes(:, i), MMP.z);
-        eval(['etamds' num2str(i) ' = Vmdsinterp(:, i) * eta_mdsAmp(i, :);']); 
-        eval(['pmds' num2str(i) ' = presIW_fromEta(MMP.z, etamds' num2str(i) ', MMP.n2extrap);']);
-    end
-  
-    Hmdsinterp(:, i) = interp1(veczmds, Hmodes(:, i), MMP.z);
-    
-    eval(['umds' num2str(i-1) ' = Hmdsinterp(:, i) * u_mdsAmp(i, :);']);
-    eval(['vmds' num2str(i-1) ' = Hmdsinterp(:, i) * v_mdsAmp(i, :);']);
-    
-    disp(['DONE WITH MODE ' num2str(i) ''])
-end
