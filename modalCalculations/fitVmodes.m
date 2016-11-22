@@ -1,30 +1,47 @@
-function [mdsAmp, xRes] = fitVmodes(z, x, vmodes, zmds)
-% = FITVMODES(z, x, vmodes, zmds)
+function [mdsAmp, vmodes, xRes] = fitVmodes(z, x, vmodes, zmds)
+% [mdsAmp, vmodes, xRes] = FITVMODES(z, x, vmodes, zmds)
 % 
 %  inputs:
-%    - z: 
-%    - x:
-%    - vmodes:
-%    - zmds (optional):
+%    - z: depth grid vector associated with the data x.
+%    - x: data whose columns are projected onto normal modes.
+%    - vmodes: matrix whose columns are normal modes.
+%    - zmds (optional): depth grid vector associated with the vertical
+%                       modes, in case it is different than the data x.
 %
 %  outputs:
-%    - mdsAmp:
+%    - mdsAmp: modal amplitudes array. One row for each mode (or column of
+%              vmodes) and one column for each of x.
+%    - vmodes: return the matrix of vertical modes, which is useful if the
+%              vmodes input is not in the same z grid as the data.
 %    - xRes:
 %
-% I MUST RETURN THE VMODES IN THE GRID Z (I ALREADY COMPUTE IN THE CODE AND
-% IT IS REQUIRED FOR FOR FURTHER CALCULATIONS WITH mdsAmp).
+% Function FITVMODES project the data x onto the normal modes specified
+% by vmodes(i.e. each column of vmodes input represents a mode).
+%
+% If vmodes are available in a different depth grid than x (i.e. if
+% observations of N2 are at different depths than the data x), please
+% specify zmds so the modes can be linearly interpolated to the z grid
+% associated with x.
 %
 % Olavo Badaro Marques, 7/Nov/2016.
 
 
-%%
+%% Check whether a z-grid (zmds) was specified for the
+% modes. If not, assumes it is the same as the data, but
+% they must have the same number of rows:
 
 if ~exist('zmds', 'var')
-    zmds = z;
+    
+    if size(vmodes, 1) == size(x, 1)
+        zmds = z;
+    else
+        error(['Optional input zmds was not specified, ' ...
+               'but number of rows of the modes is different than x'])
+    end
 end
 
 
-%% 
+%% Get the number of modes and columns of x:
 
 nmds = size(vmodes, 2);
 n = size(x, 2);
@@ -57,18 +74,16 @@ end
 imf.modelinput = mat2cell(vmodes, length(z), ones(1, nmds));
 
 
-%%
+%% Do the modal fit:
 
-% indnan = find(isnan(x));
-% [inan, jnan] = ind2sub(size(x), indnan);
-
+% Pre-allocate space for the modal amplitudes:
 mdsAmp = NaN(nmds, n);
 
-
+% Loop through the columns of x:
 for i = 1:n
    
-%     clear imf   % just to make sure
-    
+    % Check whether the ith column has enough
+    % data points for the calculation:
     lgood = ~isnan(x(:, i));
     ngood = length(find(lgood));
     
@@ -78,9 +93,11 @@ for i = 1:n
         continue   % skip the fit and go to the next iteration of the loop
     end
     
-    % My least squares function already deals with NaNs:
-%     imf.modelinput = mat2cell(vmodes(lgood, :), ngood, ones(1, nmds));
+    % Project the ith column of x onto the normal modes:
     [~, m] = myleastsqrs(z, x(:, i), imf);
+    
+    % I may as well just do:
+% % % %     m = ( G(lgood,  :)' * G(lgood,  :)) \ ( G(lgood,  :)' * x);
     
     % Assign m to ith column of mdsAmp:
     mdsAmp(:, i) = m;
