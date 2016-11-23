@@ -1,16 +1,16 @@
-function [davg, xavg] = waveAvgLSqrs(x, d, prd) %, wnd)
-% [davg, xavg] = WAVEAVGLSQRS(x, d, prd, wndw)
+function [davg, xavg] = waveAvgLSqrs(x, d, prd, wnd, wndptslide)
+% [davg, xavg] = WAVEAVGLSQRS(x, d, prd, wnd, wndptslide)
 % 
 %   inputs:
-%       - x: time vector correspondent to each column of d
-%       - d: data of the observations
-%       - prd: period of the sinusoidal 
-%       - wnd [optional]: window to 
+%       - x: vector or matrix.
+%       - d: variable to be wave-averaged (each of its rows).
+%       - prd: period of the sinusoidal, in the same units as x.
+%       - wnd (optional): window to, in the same units as x.
+%       - wndptslide (optional): this can only be input if wnd is.
 %
 %   outputs:
-%       - davg:
+%       - davg: wave-averaged variable.
 %       - xavg:
-%   MAYBE OUTPUT THE FIT AS WELL
 %
 % Use least squares to compute the wave-average (davg) of d. The
 % coefficients of a sinusoidal of period prd plus a constant are
@@ -18,25 +18,48 @@ function [davg, xavg] = waveAvgLSqrs(x, d, prd) %, wnd)
 % output is the constant.
 % The fit is computed by the function myleastsqrs.m.
 %
-% - d can be either vector or matrix.
-% - units of x and prd must be consistent among each other.
-% - wnd is a window. This can also be used as filtering as well.
-%
 % If no window is specified, the output is just a number or vector with
 % the wave-averaged quantities.
 %
 % Olavo Badaro Marques, 17/08/2016.
 
-% MAYBE I SHOULD CALL THE FUNTION SLIDING_HARMONCFIT INSIDE THIS FUNCTION
 
-%% Check number of rows of d. We will do one fit per row:
-%
-% COLUMN VECTOR???
+%% Check number of rows of d (one fit per row) and
+% whether z is a vector or matrix:
 
-Nfits = size(d, 1);
+nrows = size(d, 1);
 
 
-%% Check window input:
+% Create the indices to call the rows of x. If it is a vector (1 row),
+% indrx is a vector of 1's, otherwise it is a vector with its rows:
+if isvector(x) || iscolumn(x)
+    
+    indrx = ones(1, nrows);
+    
+    if iscolumn(x)
+        x = x';
+    end
+    
+else
+    
+    if size(x, 1)~=nrows
+        error('Arrays x and d are not consistent.')
+    else
+        indrx = 1:nrows;
+    end
+    
+end
+
+
+%% Check whether wnd and wndptslide were specified appropriately:
+
+if ~exist('wnd', 'var')
+    
+    if exist('wndptslide', 'var')
+        error('This does not make sense!')
+    end
+    
+end
 
 
 %% Create structure variable that goes
@@ -49,26 +72,38 @@ imfWave.power = 0;
 imfWave.sine = 1/prd;
 
 
-%% Pre-allocate space for wave-averaged quantity:
+%% Do the fit:
 
-davg = NaN(Nfits, 1); % IT COULD ALSO BE A MATRIX IF WE SPECIFY A WINDOW!!!
-% xavg = NaN(1, 1);     % "    "     "  BE A VECTOR IF WE    "    "    "!!!
-
-
-%% Do the fit -- outside for loop goes through the windows
-% of the data and inside for loop through the rows of it:
-
-% Loop through rows of d:
-for i = 1:Nfits
+% If there is no window, do simple least square fit for each row:
+if ~exist('wnd', 'var')
     
-    % Fit:
-    [~, wvavg_aux] = myleastsqrs(x, d(i, :), imfWave);
+    % Pre-allocate space for the wave-averaged variables:
+    davg = NaN(nrows, 1);
     
-    % Assign the mean of the sinusoidal to the output variable:
-    davg(i, 1) = wvavg_aux(1);
+    % Loop through rows of d:
+    for i = 1:nrows
+
+        % Fit:
+        [~, wvavg_aux] = myleastsqrs(x(indrx(i), :), d(i, :), imfWave);
+
+        % Assign the mean of the sinusoidal to the output variable:
+        davg(i, 1) = wvavg_aux(1);
+    end
+
+    % Create the mean time output: 
+    xavg = mean([x(1) x(end)]);
+    
+% If there is a window, use sliding harmonic fit to wave-average:
+else
+    
+    [davg, xavg] = sliding_harmonicfit(x, d, wnd, wndptslide, ...
+                                                    imfWave, [true false]);
     
 end
 
-% Create the mean time output: 
-xavg = mean(x);
+
+                                                
+
+
+
 
