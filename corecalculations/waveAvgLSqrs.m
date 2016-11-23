@@ -10,7 +10,7 @@ function [davg, xavg] = waveAvgLSqrs(x, d, prd, wnd, wndptslide)
 %
 %   outputs:
 %       - davg: wave-averaged variable.
-%       - xavg:
+%       - xavg: 
 %
 % Use least squares to compute the wave-average (davg) of d. The
 % coefficients of a sinusoidal of period prd plus a constant are
