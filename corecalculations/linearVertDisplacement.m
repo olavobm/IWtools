@@ -8,7 +8,7 @@ function [eta, backgrnd] = linearVertDisplacement(z, x, cutoff, wnd, t)
 %       - cutoff: returns NaN/0 if dTdz is too small.
 %       - wnd (optional): depending on the version of obmRunMean, wnd must
 %                         be odd.
-%       - t (optional): (after I implement improvement in obmRunMean.
+%       - t (optional): (after I implement improvement in obmRunMean).
 %
 %   outputs:
 %       - eta:
