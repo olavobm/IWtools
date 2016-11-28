@@ -9,8 +9,8 @@ function [MdsProf, MdsAmp, VarMds] = modalDecomp(nmds, zN2, N2, D, varStruct, N2
 %       - D: water depth (positive number).
 %       - varStruct: structure variable with (possible???) fields:
 %               * z:
-%               * varH
-%               * varV
+%               * varH:
+%               * varV:
 %               * (optional and fancy)
 %               *   zH: cell array correspondent to varH.
 %               *   zV: cell array correspondent to varV.
@@ -128,11 +128,12 @@ else
     end
       
     
-    if length(varStruct.zV)==1        
-        zvecs(nvarsH+1:nvarsV) = {varStruct.zV};
-    else
-        zvecs(nvarsH+1:nvarsV) = varStruct.zH;
-    end
+% I have to check if varStruct.zV is cell array or not...
+%     if length(varStruct.zV)==1        
+%         zvecs(nvarsH+1:nvars) = {varStruct.zV};
+%     else
+        zvecs(nvarsH+1:nvars) = varStruct.zV;
+%     end
     
 end
 
@@ -194,6 +195,9 @@ for i1 = 1:length(namesallvar)
         % NaN matrix with the same size as correspondent input:
         VarMds.(namesallvar{i1}).(['md' num2str(vecmds(i2)) '']) = ...
             NaN(size(varStruct.(typesallvar{i1}).(namesallvar{i1})));
+        
+%         VarMds.(namesallvar{i1}).(['md' num2str(vecmds(i2)) '']) = ...
+%             NaN(753, 5473);
     end
 end
 
@@ -201,6 +205,10 @@ end
 %% Computing modal amplitudes -- this is the hard part of the code:
 
 zN2aug = [0; zN2; D];
+
+MdsProf.z = zN2aug;
+MdsProf.Hmodes = NaN(length(zN2aug), nprofs, nmds+1);
+MdsProf.Vmodes = NaN(length(zN2aug), nprofs, nmds);
 
 % -------------------------------------------------------------------------
 % If I'm going to loop through every profile anyway, I should definitely
@@ -214,6 +222,11 @@ if ndiffMds==nprofs
     
         [Hmodes, Vmodes, ~] = inertGravVmodes(zN2, D, ...
                                               N2(:, indN2col(i1)), nmds);
+        
+        MdsProf.Hmodes(:, i1, :) = Hmodes;
+        MdsProf.Vmodes(:, i1, :) = Vmodes(:, 2:end);
+        
+        % I should simply concatenate Hmodes and Vmodes in the same array..
 
         for i2 = 1:nvars
             
@@ -225,20 +238,44 @@ if ndiffMds==nprofs
                 MdsAmp.(namesallvar{i2})(:, i1) = fitVmodes(zvecs{i2},   ...
                   varStruct.(typesallvar{i2}).(namesallvar{i2})(:, i1), ...
                   Hmodes, zN2aug);
-              
+
+                % Interpolate modes onto data's vertical grid
+                % and compute all modal components:
+                vmodesinterp = NaN(length(zvecs{i2}), nmds+1);
+                for imds = 1:(nmds+1)
+                    vmodesinterp(:, imds) = interp1(zN2aug, Hmodes(:, imds), zvecs{i2});  
+                    
+                    VarMds.(namesallvar{i2}).(['md' num2str(imds-1) ''])(:, i1) = ...
+                            vmodesinterp(:, imds) * MdsAmp.(namesallvar{i2})(imds, i1);
+                end
+                
+
             else
                
                 MdsAmp.(namesallvar{i2})(:, i1) = fitVmodes(zvecs{i2},   ...
                   varStruct.(typesallvar{i2}).(namesallvar{i2})(:, i1), ...
                   Vmodes(:, 2:end), zN2aug);
+              
+
+%                 % Interpolate modes onto data's vertical grid
+%                 % and compute all modal components:
+%                 vmodesinterp = NaN(length(zvecs{i2}), nmds);
+%                 for imds = 1:nmds
+%                     vmodesinterp(:, imds) = interp1(zN2aug, Vmodes(:, imds+1), zvecs{i2});  
+% keyboard
+%                     VarMds.(namesallvar{i2}).(['md' num2str(imds) ''])(:, i1) = ...
+%                             vmodesinterp(:, imds) * MdsAmp.(namesallvar{i2})(imds, i1);
+%     
+%                 end
                 
             end
+            
             
             
         end
 
         % Print progress to the screen:
-        if mod(i1, round(0.1*nprofs))==0
+        if mod(i1, round(0.025*nprofs))==0
             disp(['Fitting modes to column ' num2str(i1) ' of ' ...
                   '' num2str(nprofs) ''])
         end
@@ -318,5 +355,3 @@ toc
 % maximum of mode-1, somewhere,  around yday 38)
 
 % -------------------------------------------------------------------------
-
-keyboard
