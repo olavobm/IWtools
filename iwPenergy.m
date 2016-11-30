@@ -12,9 +12,9 @@ function [pe, peint] = iwPenergy(x, lrhoeta, n2backg, z)
 %       - pe: kinetic energy.
 %       - peint: depth-integrated kinetic energy.
 %
-% IWPENERGY computes the potential energy density. If optional input z is
-% provided, IWPENERGY also computes the depth-integrated potential energy
-% density.
+% IWPENERGY computes the avilable potential energy density. If optional
+% input z is provided, IWPENERGY also computes the depth-integrated
+% available potential energy density.
 %
 % Density perturbation (rho) and displacement (eta) can be easilly
 % calculated from one another in a LINEAR framework as:
@@ -24,9 +24,9 @@ function [pe, peint] = iwPenergy(x, lrhoeta, n2backg, z)
 %	PE = (0.5*g^2/rho0) * (rho/N)^2     or      PE = 0.5 *rho0*(N*eta)^2
 %
 % Displacement is usually computed from density perturbation, so this
-% function computes PE from rho when lrhoeta is true. There may be
+% function computes APE from rho when lrhoeta is true. There may be
 % some numerical details when computing rho or eta in different ways,
-% which is the reason I included both options for computing PE in this
+% which is the reason I included both options for computing APE in this
 % function.
 %
 % Olavo Badaro Marques, 28/Nov/2016.
