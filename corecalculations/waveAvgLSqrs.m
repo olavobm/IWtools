@@ -128,9 +128,11 @@ if ~exist('wnd', 'var')
     
 % If there is a window, use sliding harmonic fit to wave-average:
 else
-
+    
+    avgpart = [true, false(1, 2*length(imfWave.sine))];
+    
     [davg, xavg] = sliding_harmonicfit(x, d, wnd, wndptslide, ...
-                                            imfWave, [true, false, false]);
+                                       imfWave, avgpart);
     
 end
 
