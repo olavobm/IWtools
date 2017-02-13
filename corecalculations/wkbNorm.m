@@ -87,6 +87,8 @@ znorm = interp1overnans(z, zn, zx);
 
 xn = NaN(size(zn, 1), size(x, 2));
 
+zn = znorm;
+
 for i = 1:size(x, 2)
     
     xn(:, i) = interp1(znorm, xnorm(:, i), zn);
