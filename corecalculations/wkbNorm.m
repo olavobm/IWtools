@@ -1,9 +1,9 @@
-function [zn, xn] = wkbNorm(z, N, zx, x, N0)
+function [zwkb, xwkb, zStretch] = wkbNorm(z, N, zx, x, zgrid, N0)
 % [zn, xn] = WKBNORM(z, N, x)
 %
 %   inputs:
 %       - z:
-%       - N: buyancy frequency, in radians per second.
+%       - N: buoyancy frequency, in radians per second.
 %       - zx: depth where x is specified.
 %       - x: vector or matrix. The normalization is done for
 %            each column separately.
@@ -16,26 +16,15 @@ function [zn, xn] = wkbNorm(z, N, zx, x, N0)
 %
 % WKBNORM does the normalization of ....
 %
-% What do I really need???
 % Velocity only???
 % How small can N really be??
-% What if I integrate upwards, rather than downwards??
 %
 % Olavo Badaro Marques, 10/Feb/2017.
 
-
-%% If x or z are a rows vector, transpose them:
+%%
 
 if isrow(z)
-    z = z';
-end
-
-if isrow(x)
-    x = x';
-end
-
-if isrow(N)
-    N = N';
+	z = z';
 end
 
 
@@ -53,6 +42,7 @@ end
 
 %% Make sure the first value is given at the surface
 
+% what if is is a matrix??
 if z(1)~=0
     error('First element MUST be 0')
 end
@@ -67,7 +57,7 @@ end
 
 %% Compute the stretched vertical coordinate:
 
-zn = cumtrapz(z, N/N0);
+zStretch = wkbStretch(z, N, N0);
 
 
 %% Do the WKB normalization:
@@ -76,23 +66,29 @@ zn = cumtrapz(z, N/N0);
 Natx = interp1overnans(z, N, zx);
 
 % Normalization itself:
-xnorm = x ./ repmat(sqrt((Natx/N0)), 1, size(x, 2));
+xNorm = wkbScale(x, Natx, N0);
 
 %
-znorm = interp1overnans(z, zn, zx);
+zwkb = interp1overnans(z, zStretch, zx);
 
 
-%% Now interpolate the normalized variable
-% onto the stretched coordinate:
+%% If zgrid is given, interpolate on grid of stretched depths:
 
-xn = NaN(size(zn, 1), size(x, 2));
-
-zn = znorm;
-
-for i = 1:size(x, 2)
+if ~exist('zgrid', 'var')
     
-    xn(:, i) = interp1(znorm, xnorm(:, i), zn);
+    xwkb = xNorm;
+   
+else
+    
+    xwkb = NaN(length(zgrid), size(x, 2));
+    
+    for i = 1:size(x, 2)
+    
+        xwkb(:, i) = interp1(zwkb, xNorm(:, i), zgrid);
+    
+    end
     
 end
+
 
 
