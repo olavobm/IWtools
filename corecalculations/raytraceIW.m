@@ -1,5 +1,5 @@
-function [xr, zr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad)
-% [xr, zr] = RAYTRACEIW(xg, zg, N2, f0, wvf, xz0)
+function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
+% [xzr] = RAYTRACEIW(xg, zg, N2, f0, wvf, xz0)
 %
 %   inputs:
 %       - xg: horizontal grid points.
@@ -13,9 +13,8 @@ function [xr, zr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad)
 %       - pointDir:
 %
 %   outputs:
-%       - xr: horizontal points along the ray.
-%       - zr: vertical points along the ray.
-%
+%       - xzr: Nx2 with N coordinates of the ray.
+%              xzr(1, :) is always equal to xz0.
 %
 %
 % The tangent (dz/dx) of the ray is giving by the dispersion relationship:
@@ -45,37 +44,56 @@ function [xr, zr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad)
 %   doing, but then I have to case about how far the rays are from grid
 %   points).
 %
-% TRACING "IN TIME" IS THE RIGHT APPROACH!!!, BUT THINK OF IT AS DISTANCE!
+% SHOULD ADD NANS AS THE FIRST ROW OF N SUCH THAT THE SURFACE CAN BE
+% TREATED AS FLAT BOUNDARY??? THE CODE FOR DOING REFLECTION OFF OF THE
+% SURFACE AND THE BOTTOM WOULD THEN BE THE SAME
 
 
 %% Create a Nx2 matrix with all the N grid point coordinates:
 
-[xgmesh, ygmesh] = meshgrid(xg, yg);
+[xgmesh, ygmesh] = meshgrid(xg, zg);
 
 gridPoints = [xgmesh(:), ygmesh(:)];
 
 
 %%
 
-traceDx = max([median(diff(xg)), median(diff(zg))]);
 
-% allow this to be given as inpute
+if ~exist('traceDx', 'var')
+    
+    % traceDx = median(diff(xg));   % use xg, because this is much larger in
+                                    % the ocean than zg, and rays propagate
+                                    % mostly horizontally
+    traceDx = 1000;
+
+end
+    
+
 
 
 %%
 
 xzNow = xz0;
 
-linGrid = (xzNow(1)>=xg(1) && xzNow(1)>=xg(end) && ...
-           xzNow(2)>=zg(1) && xzNow(2)>=zg(end));
+linGrid = (xzNow(1)>=xg(1) && xzNow(1)<=xg(end) && ...
+           xzNow(2)>=zg(1) && xzNow(2)<=zg(end));
 
 indRay = zeros(1, size(gridPoints, 1));
+xzr = NaN(length(indRay), 2);
 
-indclosest = dsearchn(gridPoints, xzNow(:));
-    
-indRay(1) = indclosest;
-    
-xzNow = gridPoints(indclosest, :);
+% indclosest = dsearchn(gridPoints, xzNow(:));
+% indRay(1) = indclosest;
+xzr(1, :) = xzNow;
+
+% xzNow = gridPoints(indclosest, :);
+
+% -------------------------------------------------------
+% I DO NOT WANT TO INTERPOLATE OVER NANS!!!!!
+auxNprof = interp1overnans(xg, N', xzNow(1));
+auxNprof = auxNprof';
+
+TrcN2 = interp1(zg, auxNprof, xzNow(2));
+% -------------------------------------------------------
 
 xzTrc = NaN(1, 2);
 %
@@ -83,35 +101,82 @@ i = 2;
 
 while linGrid
     
-    rayTan = abs( sqrt((wvf^2 - f0^2)/(N(indclosest)^2 - wvf^2)) );
+    rayTan = abs( sqrt((wvf^2 - f0^2)/(TrcN2^2 - wvf^2)) );
     
-    rayAng = atan(rayTan);
+    rayAng = atan(rayTan);  % the above with always gives an
+                            % angle in the first quadrant
     
+%     % Check direction
 %     if rayQuad(1)<0
 %         
 %     end
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
     
-    indclosest = dsearchn(gridPoints, xzNow(:));
+    linGrid = (xzTrc(1)>=xg(1) && xzTrc(1)<=xg(end) && ...
+               xzTrc(2)>=zg(1) && xzTrc(2)<=zg(end));
     
-    linGrid = (xzNow(1)>=xg(1) && xzNow(1)>=xg(end) && ...
-               xzNow(2)>=zg(1) && xzNow(2)>=zg(end));
+	[linX, linZ] = checklGrid(xg([1 end]), zg([1 end]), xzTrc);
+           
+	
+    if linX && linZ
+        
+        
+        % -------------------------------------------------------
+        % I DO NOT WANT TO INTERPOLATE OVER NANS!!!!!
+        auxNprof = interp1overnans(xg, N', xzTrc(1));
+        auxNprof = auxNprof';
+        
+        TrcN2 = interp1(zg, auxNprof, xzTrc(2));
+        % -------------------------------------------------------
+
+
+%         indRay(i) = indclosest;   % probably useless now
+        
+        xzr(i, :) = xzTrc;
+
+        xzNow = xzTrc;
+        i = i + 1;
+        
+        
+    else
+        
+        % For now, break tracing when ray leaves the
+        % domain THROUGH ANY SIDES OF DOMAIN
+        
+        break
+        
+        
+    end
+           
+%     indclosest = dsearchn(gridPoints, xzNow(:));
     
-    
-    indRay(i) = indclosest;
-    
-    
-    
-    i = i + 1;
 end
 
 
 
+%%
+
+xzr = xzr(~isnan(xzr(:, 1)), :);
 
 
 
+end
 
 
+%% -----------------------------------------------------------------
+% ------------------------------------------------------------------
+% ------------------------------------------------------------------
+
+function [linX, linZ] = checklGrid(xglims, zglims, xzpt)
+    %%
+    
+    linX = (xzpt(1) >= xglims(1)) && (xzpt(1) <= xglims(2));
+    
+    linZ = (xzpt(2) >= zglims(1)) && (xzpt(2) <= zglims(2));
+    
+
+
+end
 
 
