@@ -1,4 +1,4 @@
-function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
+function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 % [xzr] = RAYTRACEIW(xg, zg, N2, f0, wvf, xz0)
 %
 %   inputs:
@@ -14,8 +14,8 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %                  combinations indicate which trignometric quadrant.
 %
 %   outputs:
-%       - xzr: Nx2 with N coordinates of the ray.
-%              xzr(1, :) is always equal to xz0.
+%       - xzRay: Nx2 with N coordinates of the ray.
+%               xzr(1, :) is always equal to xz0.
 %
 %
 % The tangent (dz/dx) of the ray is giving by the dispersion relationship:
@@ -32,6 +32,8 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %     correct), which could allow me use some linear algebra and write a
 %     better code.
 %   - DISTANCE, X AND Z WITH DIFFERENT SCALES (!!!!)
+%   - MAKE SURE THAT I WON`T HAVE A PROBLEM IF THE RAY GETS TRACED THROUGH
+%     THE BOTTOM BUT OUTSIDE OF THE GRID.
 %
 %   - ACTUALLY, MAYBE THIS FUNCTION IS USELESS FOR THIS PURPOSE. BECAUSE IF
 %     I CAN DO WKB STRETCHING, THEN I CAN COME UP WITH A MUCH MORE
@@ -91,36 +93,119 @@ end
 
 xzNow = xz0;
 
-linGrid = (xzNow(1)>=xg(1) && xzNow(1)<=xg(end) && ...
-           xzNow(2)>=zg(1) && xzNow(2)<=zg(end));
-
 indRay = zeros(1, size(gridPoints, 1));
-xzr = NaN(length(indRay), 2);
+xzRay = NaN(length(indRay), 2);
 
-% indclosest = dsearchn(gridPoints, xzNow(:));
-% indRay(1) = indclosest;
-xzr(1, :) = xzNow;
+% Make sure the first point is inside the grid:
+[linX, linZ] = checklGrid(xg([1 end]), zg([1 end]), xzNow);
 
-% xzNow = gridPoints(indclosest, :);
+if linX && linZ
+    linGrid = true;
+else
+    linGrid = false;
+end
 
-% -------------------------------------------------------
-% I DO NOT WANT TO INTERPOLATE OVER NANS!!!!!
-auxNprof = interp1overnans(xg, N', xzNow(1));
+
+%% Now make sure it is a non-NaN place (IT WOULD ACTUALLY BE GOOD TO ALLOW
+% THE FIRST POINT RIGHT ON THE BOUNDARY, A SIMPLE AND FAIRLY GOOD SOLUTION
+% IS TO KEEP THE RAY TRACING IF THE POINT JUST ABOVE HAS A VALID N):
+
+% Interpolate a vertical profile
+auxNprof = interp1overnans(xg, N', xzNow(1), xg(2)-xg(1));  
 auxNprof = auxNprof';
 
-TrcN2 = interp1(zg, auxNprof, xzNow(2));
-% -------------------------------------------------------
+% Interpolate at a depth in the vertical profile:
+nowN2 = interp1(zg, auxNprof, xzNow(2));
+
+if isnan(nowN2)
+    linGrid = false;
+end
 
 
-%%
-xzTrc = NaN(1, 2);
+%% Loop for the ray tracing:
+
 %
-i = 2;
+xzTrc = NaN(1, 2);    % this is useles...
+
+%
+i = 1;
+
 
 while linGrid
+    %% Check whether current point is on the grid and
+    % whether buoyancy frequency is in a non-NaN
+    
+%     linGrid = (xzNow(1)>=xg(1) && xzNow(1)<=xg(end) && ...
+%                xzNow(2)>=zg(1) && xzNow(2)<=zg(end));
+    
+	[linX, linZ] = checklGrid(xg([1 end]), zg([1 end]), xzNow);
+           
+	
+    if ~linX || xzNow(2)>zg(end)
+        
+        % do nothing because it has left the side boundaries
+        
+        linGrid = false;
+%         break
+    end
+    
+    
+    %% Interpolate N to the current point:   
+    if linX && linZ
+        
+        
+        % Interpolate a vertical profile
+        auxNprof = interp1overnans(xg, N', xzNow(1), xg(2)-xg(1));  
+        auxNprof = auxNprof';
+        
+        % Interpolate at a depth in the vertical profile:
+        nowN2 = interp1(zg, auxNprof, xzNow(2));
+        
+    end
+    
+    
+    %% Reflection on the bottom or at the surface:
+    % (THIS PART CHANGES THE CURRENT XZNOW POINT)
+    if isnan(nowN2) || xzNow(2)<zg(1)
+        
+        if isnan(nowN2)
+            
+            % do bottom reflection
+            
+        else
+            
+            [xaux, yaux] = intersections([xzRay(i-1, 1), xzNow(1)], ...
+                                         [xzRay(i-1, 2), xzNow(2)], ...
+                                         [xg(1), xg(end)], [zg(1), zg(1)]);
+            
+            % Direct the ray towards the ocean (increasing depth):
+            rayQuad(2) = 1;
+                                     
+        end
+        
+        xzNow = [xaux, yaux];
+        
+        % Interpolate N at the current location:
+        auxNprof = interp1overnans(xg, N', xzNow(1), xg(2)-xg(1));  
+        auxNprof = auxNprof';
+        
+        % Interpolate at a depth in the vertical profile:
+        nowN2 = interp1(zg, auxNprof, xzNow(2));
+        
+    end
+    
+    
+    %% Assign current point to output:
+
+	xzRay(i, :) = xzNow;
+    i = i + 1;
+    
+    
+    %% Now use N at xzNow to trace to the next point:
+    
     
     % Compute first-quadrant tangent of the internal wave characteristic:
-    rayTan = abs( sqrt((wvf^2 - f0^2)/(TrcN2^2 - wvf^2)) );
+    rayTan = abs( sqrt((wvf^2 - f0^2)/(nowN2^2 - wvf^2)) );
     
     rayAng_1stQuad = atan(rayTan);  % the above with always gives an
                                     % angle in the first quadrant
@@ -143,58 +228,41 @@ while linGrid
         rayAng = atan2(rayVec(2), rayVec(1));
     end
                      
-    % Trace next point on the ray:
+    %% Trace next point on the ray:
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
     
-    % Now see whether the traced point is still
-    % on grid with non-NaN buoyancy frequency:
-    linGrid = (xzTrc(1)>=xg(1) && xzTrc(1)<=xg(end) && ...
-               xzTrc(2)>=zg(1) && xzTrc(2)<=zg(end));
     
-	[linX, linZ] = checklGrid(xg([1 end]), zg([1 end]), xzTrc);
+    xzNow = xzTrc;
+          	
+    
+%     if linX && linZ
+%        
+% %         indRay(i) = indclosest;   % probably useless now
+%         
+%         xzRay(i, :) = xzTrc;
+% 
+%         xzNow = xzTrc;
+%         i = i + 1;
+%         
+%         
+%     else
+%         
+%         % For now, break tracing when ray leaves the
+%         % domain THROUGH ANY SIDES OF DOMAIN
+%         
+%         break
+%         
+%         
+%     end
            
-	
-    if linX && linZ
-        
-        
-        % -------------------------------------------------------
-        % I DO NOT WANT TO INTERPOLATE OVER NANS!!!!!
-        auxNprof = interp1overnans(xg, N', xzTrc(1), );  % interpolate a vertical profile
-        auxNprof = auxNprof';
-        
-        TrcN2 = interp1(zg, auxNprof, xzTrc(2));
-        % -------------------------------------------------------
-
-
-%         indRay(i) = indclosest;   % probably useless now
-        
-        xzr(i, :) = xzTrc;
-
-        xzNow = xzTrc;
-        i = i + 1;
-        
-        
-    else
-        
-        % For now, break tracing when ray leaves the
-        % domain THROUGH ANY SIDES OF DOMAIN
-        
-        break
-        
-        
-    end
-           
-%     indclosest = dsearchn(gridPoints, xzNow(:));
     
 end
-
-% [XI,YI] = polyxpoly(X1,Y1,X2,Y2) - but this is from he mapping toolbox
 
 
 %%
 
-xzr = xzr(~isnan(xzr(:, 1)), :);
+xzRay = xzRay(~isnan(xzRay(:, 1)), :);
 
 
 
@@ -216,4 +284,11 @@ function [linX, linZ] = checklGrid(xglims, zglims, xzpt)
 
 end
 
+
+% function interpNatxz()
+%     %%
+% 
+%     
+%     
+% end
 
