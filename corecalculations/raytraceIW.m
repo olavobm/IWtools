@@ -10,7 +10,8 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %       - f0: Coriolis parameter in radians per second.
 %       - wvf: wave frequency, in radians per second.
 %       - xz0: 1x2 vector with initial (x, z) coordinates of the wave group.
-%       - pointDir:
+%       - rayQuad: 1x2 vector. Its values can either be -1 or +1. The four
+%                  combinations indicate which trignometric quadrant.
 %
 %   outputs:
 %       - xzr: Nx2 with N coordinates of the ray.
@@ -29,6 +30,11 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %     correct), which could allow me use some linear algebra and write a
 %     better code.
 %   - DISTANCE, X AND Z WITH DIFFERENT SCALES (!!!!)
+%
+%   - ACTUALLY, MAYBE THIS FUNCTION IS USELESS FOR THIS PURPOSE. BECAUSE IF
+%     I CAN DO WKB STRETCHING, THEN I CAN COME UP WITH A MUCH MORE
+%     EFFICIENT ALGORITHM. ANYWAY, I COULD USE THIS CODE FOR A GENERAL RAY
+%     TRACING ALGORITHM.
 %
 % The while loop may make the code more synthetic if I first store the ray
 % location and then trace it, leaving the next point for subsequent
@@ -55,6 +61,13 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 
 gridPoints = [xgmesh(:), ygmesh(:)];
 
+
+%%
+
+if ~exist('rayQuad', 'var')
+    rayQuad = [1 , 1];
+%     error('bla')  % when the function is done, it should give an error.
+end
 
 %%
 
@@ -95,21 +108,36 @@ auxNprof = auxNprof';
 TrcN2 = interp1(zg, auxNprof, xzNow(2));
 % -------------------------------------------------------
 
+
+%%
 xzTrc = NaN(1, 2);
 %
 i = 2;
 
 while linGrid
     
+    % Compute first-quadrant tangent of the internal wave characteristic:
     rayTan = abs( sqrt((wvf^2 - f0^2)/(TrcN2^2 - wvf^2)) );
     
-    rayAng = atan(rayTan);  % the above with always gives an
-                            % angle in the first quadrant
+    rayAng_1stQuad = atan(rayTan);  % the above with always gives an
+                                    % angle in the first quadrant
     
-%     % Check direction
-%     if rayQuad(1)<0
-%         
-%     end
+    rayAng = rayAng_1stQuad;
+    
+    if rayQuad(1) < 0
+        rayVec = reflect2Dacrossline([0; 0], [0; 1], ...
+                                     [cos(rayAng); sin(rayAng)]);
+                                 
+        rayAng = atan2(rayVec(2), rayVec(1));
+    end
+	
+    if rayQuad(2) < 0
+        rayVec = reflect2Dacrossline([0; 0], [1; 0], ...
+                                     [cos(rayAng); sin(rayAng)]);
+                                 
+        rayAng = atan2(rayVec(2), rayVec(1));
+    end
+                            
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
     
@@ -140,6 +168,8 @@ while linGrid
         
         
     else
+        
+        
         
         % For now, break tracing when ray leaves the
         % domain THROUGH ANY SIDES OF DOMAIN
