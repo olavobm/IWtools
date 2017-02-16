@@ -21,6 +21,8 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 % The tangent (dz/dx) of the ray is giving by the dispersion relationship:
 % dz/dx = +- sqrt((wvf^2 - f0^2) / (N^2 - wvf^2))
 %
+% GOT TO FIGURE OUT HOW TO PROPERLY IDENTIFY THE BOTTOM!!!
+%
 % TO DO:
 %   - The grid resolution gives me angle resolution of tracing. Use
 %     that as a diagnostic.
@@ -62,12 +64,15 @@ function [xzr] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 gridPoints = [xgmesh(:), ygmesh(:)];
 
 
-%%
+%% Throw error if user did not specify which
+% quadrant the ray is propagating in:
+% (ADD ERROR ONLY WHEN THE FUNCTION IS DONE)
 
 if ~exist('rayQuad', 'var')
     rayQuad = [1 , 1];
 %     error('bla')  % when the function is done, it should give an error.
 end
+
 
 %%
 
@@ -80,8 +85,6 @@ if ~exist('traceDx', 'var')
     traceDx = 1000;
 
 end
-    
-
 
 
 %%
@@ -121,9 +124,11 @@ while linGrid
     
     rayAng_1stQuad = atan(rayTan);  % the above with always gives an
                                     % angle in the first quadrant
-    
     rayAng = rayAng_1stQuad;
     
+    % Now change the ray angle (reflect it across cartesian
+    % axes) depending on the rayQuad, which determines the
+    % quadrant the ray is:
     if rayQuad(1) < 0
         rayVec = reflect2Dacrossline([0; 0], [0; 1], ...
                                      [cos(rayAng); sin(rayAng)]);
@@ -137,10 +142,13 @@ while linGrid
                                  
         rayAng = atan2(rayVec(2), rayVec(1));
     end
-                            
+                     
+    % Trace next point on the ray:
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
     
+    % Now see whether the traced point is still
+    % on grid with non-NaN buoyancy frequency:
     linGrid = (xzTrc(1)>=xg(1) && xzTrc(1)<=xg(end) && ...
                xzTrc(2)>=zg(1) && xzTrc(2)<=zg(end));
     
@@ -152,7 +160,7 @@ while linGrid
         
         % -------------------------------------------------------
         % I DO NOT WANT TO INTERPOLATE OVER NANS!!!!!
-        auxNprof = interp1overnans(xg, N', xzTrc(1));
+        auxNprof = interp1overnans(xg, N', xzTrc(1), );  % interpolate a vertical profile
         auxNprof = auxNprof';
         
         TrcN2 = interp1(zg, auxNprof, xzTrc(2));
@@ -169,8 +177,6 @@ while linGrid
         
     else
         
-        
-        
         % For now, break tracing when ray leaves the
         % domain THROUGH ANY SIDES OF DOMAIN
         
@@ -183,6 +189,7 @@ while linGrid
     
 end
 
+% [XI,YI] = polyxpoly(X1,Y1,X2,Y2) - but this is from he mapping toolbox
 
 
 %%
