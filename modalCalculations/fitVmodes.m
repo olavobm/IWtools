@@ -1,4 +1,4 @@
-function [mdsAmp, vmodes, xRes] = fitVmodes(z, x, vmodes, zmds)
+function [mdsAmp, vmodes] = fitVmodes(z, x, vmodes, zmds)
 % [mdsAmp, vmodes, xRes] = FITVMODES(z, x, vmodes, zmds)
 % 
 %  inputs:
@@ -13,7 +13,6 @@ function [mdsAmp, vmodes, xRes] = fitVmodes(z, x, vmodes, zmds)
 %              vmodes) and one column for each of x.
 %    - vmodes: return the matrix of vertical modes, which is useful if the
 %              vmodes input is not in the same z grid as the data.
-%    - xRes:
 %
 % Function FITVMODES project the data x onto the normal modes specified
 % by vmodes(i.e. each column of vmodes input represents a mode).
