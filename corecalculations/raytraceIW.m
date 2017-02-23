@@ -1,4 +1,4 @@
-function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
+function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx, botstruct)
 % [xzr] = RAYTRACEIW(xg, zg, N2, f0, wvf, xz0)
 %
 %   inputs:
@@ -12,6 +12,9 @@ function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %       - xz0: 1x2 vector with initial (x, z) coordinates of the wave group.
 %       - rayQuad: 1x2 vector. Its values can either be -1 or +1. The four
 %                  combinations indicate which trignometric quadrant.
+%       - botstruct: structure with two fields:
+%               * x: horizontal location.
+%               * z: bottom depth.
 %
 %   outputs:
 %       - xzRay: Nx2 with N coordinates of the ray.
@@ -31,9 +34,19 @@ function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx)
 %   - It could be nice to deal with wavenumber of fake magnitude (but
 %     correct), which could allow me use some linear algebra and write a
 %     better code.
-%   - DISTANCE, X AND Z WITH DIFFERENT SCALES (!!!!)
 %   - MAKE SURE THAT I WON`T HAVE A PROBLEM IF THE RAY GETS TRACED THROUGH
 %     THE BOTTOM BUT OUTSIDE OF THE GRID.
+%   - I PROBABLY WANT TO INTEGRATE DZ/DX OR DX/DZ DEPENDING
+%     ON THE ANGLE OF THE RAY
+%   - PROBABLY BE USEFUL TO ALLOW GIVING THE BOTTOM AS INPUT
+%
+%   - WOULD BE NICE IF THE GRID DID NOT HAVE TO GO ALL THE
+%     WAY TO THE SURFACE
+%
+%   - IF THE POINT IS CLOSE TO THE BOUNDARY, BUT PAST THE LAST USEFUL
+%     GRID POINT, I GET AN ERROR BECAUSE N2 IS NAN BUT RAY HASN`T
+%     CROSSED THE BOUNDARY. THIS SUGGEST N2 MUST BE SPECIFIED PAST THE
+%     BOTTOM AND THEN MY CRITERION FOR BOTTOM ENCOUNTERING SHOULD CHANGE
 %
 %   - ACTUALLY, MAYBE THIS FUNCTION IS USELESS FOR THIS PURPOSE. BECAUSE IF
 %     I CAN DO WKB STRETCHING, THEN I CAN COME UP WITH A MUCH MORE
@@ -89,6 +102,36 @@ if ~exist('traceDx', 'var')
 end
 
 
+%% Identify the bottom (still need generalize the code):
+
+
+if find(isnan(N), 1)  % I'm not sure if the if is necessary.
+    domainBottom = defineNaNregions(isnan(N));
+    
+    %
+    for i = 1:length(domainBottom)
+        
+        bla = false(size(N));
+        
+        indbot = sub2ind(size(bla), domainBottom{i}(:, 1), domainBottom{i}(:, 2));
+        
+        bla(indbot) = true;
+%         bla(domainBottom{i}(:, 1), domainBottom{i}(:, 2)) = true;
+        
+        indbdry = findBoundary(bla);
+        indbdry2 = sortHoop(indbdry);
+    end
+    
+    [a, b] = meshgrid(xg, zg);
+    
+    indhoop = sub2ind(size(a), indbdry2(:, 1), indbdry2(:, 2));
+
+    indhoop = {indhoop};
+    
+end
+
+
+
 %%
 
 xzNow = xz0;
@@ -135,15 +178,14 @@ while linGrid
     %% Check whether current point is on the grid and
     % whether buoyancy frequency is in a non-NaN
     
-%     linGrid = (xzNow(1)>=xg(1) && xzNow(1)<=xg(end) && ...
-%                xzNow(2)>=zg(1) && xzNow(2)<=zg(end));
-    
 	[linX, linZ] = checklGrid(xg([1 end]), zg([1 end]), xzNow);
            
-	
     if ~linX || xzNow(2)>zg(end)
         
         % do nothing because it has left the side boundaries
+        %
+        % Would probably be good to use the interpolation to get
+        % the last point on the edge of the grid.
         
         linGrid = false;
 %         break
@@ -164,15 +206,143 @@ while linGrid
     end
     
     
-    %% Reflection on the bottom or at the surface:
-    % (THIS PART CHANGES THE CURRENT XZNOW POINT)
-    if isnan(nowN2) || xzNow(2)<zg(1)
+    %% Reflection off the bottom or the surface:
+    % (I PROBABLY WANT TO SPLIT THIS, DEALING WITH POINTS OUTSIDE
+    % OF THE GRID FIRST, AND BOTTOM REFLECTION LATER)
+    if (isnan(nowN2) && linX && linZ) || xzNow(2)<zg(1)
         
         if isnan(nowN2)
             
-            % do bottom reflection
+            % (xzNow(1) - xzRay(i-1, 1))
             
+            % This finds the bottom:
+            llookforbot = true;
+            indlookbot = 1;
+            while llookforbot
+                
+                % there is a problem if the previous point is on (very
+                % close to the boundary). For now, I'll use a different
+                % point on the ray (i-2) rather than (i-1)).
+                %
+                % STEPPY BOUNDARY MAY GIVE MULTIPLE INTERSECTIONS --
+                % THIS FORCES ME TO USE A SMOOTHED LOW-RES BOUNDARY
+                try
+                [xcross, ycross, indAtHoop] = intersections(a(indhoop{indlookbot}), ...
+                                                            b(indhoop{indlookbot}), ...
+                                                            [xzNow(1), xzRay(i-2, 1)], ...
+                                                            [xzNow(2), xzRay(i-2, 2)]);
+                catch
+                    keyboard
+                end
+                % --------------------------------------------------
+                % REMOVE THIS WHEN I ADDRESS NEAR-BOTTOM
+                % BUOYANCY FREQUENCY!!!!!
+                if isempty(xcross)
+                    dxaux = xzNow(1) - xzRay(i-2, 1);
+                    dzaux = xzNow(2) - xzRay(i-2, 2);
+                    
+                    xzNow(1) = xzNow(1) + dxaux;
+                    xzNow(2) = xzNow(2) + dzaux;
+                    
+                    [xcross, ycross, indAtHoop] = intersections(a(indhoop{indlookbot}), ...
+                                                            b(indhoop{indlookbot}), ...
+                                                            [xzNow(1), xzRay(i-2, 1)], ...
+                                                            [xzNow(2), xzRay(i-2, 2)]);
+                    
+                end
+                % --------------------------------------------------
+                
+                if isempty(xcross)
+                    
+                    indlookbot = indlookbot + 1;
+                    
+                else
+                    
+                    xcross = xcross(1);
+                    ycross = ycross(1);  % remove this in the future
+                    
+                    botstruct.x = a(indhoop{indlookbot});
+                    botstruct.z = b(indhoop{indlookbot});
+                    
+                    llookforbot = false;
+                end 
+            end
+            
+            xaux = xcross;
+            yaux = ycross;
+            
+            % If bottom is given I may or may not want to smooth the
+            % bottom. If not given, I definitely want to smooth it.
+            % THIS CAN GIVE HUGE PROBLEMS AT THE EDGES.... I PROBABLY JUST
+            % I WANT TO SPECIFY THE BOTTOM AS INPUT...
+            lsmoothbot = true;
+            
+            if lsmoothbot
+                
+                smoothscale = 5000;   % 5 km
+                
+                upperind = ceil(indAtHoop);
+                lowerind = floor(indAtHoop);
+                
+                lwidenpts = true;
+                while lwidenpts
+                    
+                    distSmooth = sqrt((botstruct.x(upperind) - botstruct.x(lowerind)).^2 + ...
+                                      (botstruct.z(upperind) - botstruct.z(lowerind)).^2);
+                                  
+                    if distSmooth < smoothscale
+                        lowerind = lowerind - 1;
+                        upperind = upperind + 1;
+                    else
+                        lwidenpts = false;
+                    end           
+                end
+                
+                xslope = botstruct.x([lowerind upperind]);
+                zslope = botstruct.z([lowerind upperind]);
+                
+                if xslope(1)>xslope(2)
+                    inddslope = [1, 2];
+                elseif xslope(1)>xslope(2)
+                    inddslope = [2, 1];
+                else
+                    inddslope = [1, 2];
+                end
+                
+                dxslope = xslope(inddslope(1)) - xslope(inddslope(2));
+                dzslope = zslope(inddslope(1)) - zslope(inddslope(2));
+                
+                dslope = dzslope / dxslope;
+                % this should be outside the if block, because I
+                % also want to do if user specifies bathymetry
+                
+                % this is only half of the trigonometric circle.
+                % SHOULD I MAKE IT ALL AROUND??? PROBABLY NOT NECESSARY
+                
+            end
+            
+            
+            % if ray is steeper than slope -- reflect vertical
+            % direction
+            %
+            % if slope is steeper than ray -- reflect horizontal
+            % direction
+            if abs(tan(rayAng)) > abs(dslope)
+                rayQuad(2) = - rayQuad(2);
+            else
+                rayQuad(1) = - rayQuad(1);
+            end
+       
+%             % Distance between previous and current points:
+%             rayPtsDist = sqrt((xzNow(1) - xzRay(i-1, 1))^2 + ...
+%                               (xzNow(2) - xzRay(i-1, 2))^2);
+%                           
+%             % Look in the neighbouring region (i.e. within rayPtsDist)
+%             % for the boundary .... MAYBE I COULD IMPLEMENT THIS LATER
+             
+
         else
+            % Reflection off the surface:
             
             [xaux, yaux] = intersections([xzRay(i-1, 1), xzNow(1)], ...
                                          [xzRay(i-1, 2), xzNow(2)], ...
@@ -190,19 +360,30 @@ while linGrid
         auxNprof = auxNprof';
         
         % Interpolate at a depth in the vertical profile:
-        nowN2 = interp1(zg, auxNprof, xzNow(2));
+%         nowN2 = interp1(zg, auxNprof, xzNow(2));
+        if isnan(nowN2)
+            auxbla = auxNprof(~isnan(auxNprof));
+            nowN2 = auxbla(end);  % approximate with the
+                                  % closest to the bottom
+        else
+            nowN2 = auxNprof2(1);  
+        end
+        
+        if isnan(nowN2)
+            error('nowN2 is NaN. this should not happen here!')
+        end
         
     end
     
     
     %% Assign current point to output:
-
+    
 	xzRay(i, :) = xzNow;
+
     i = i + 1;
     
     
     %% Now use N at xzNow to trace to the next point:
-    
     
     % Compute first-quadrant tangent of the internal wave characteristic:
     rayTan = abs( sqrt((wvf^2 - f0^2)/(nowN2^2 - wvf^2)) );
@@ -227,7 +408,8 @@ while linGrid
                                  
         rayAng = atan2(rayVec(2), rayVec(1));
     end
-                     
+       
+    
     %% Trace next point on the ray:
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
@@ -286,7 +468,7 @@ end
 
 
 % function interpNatxz()
-%     %%
+%     %% TOTALLY MAKES MY LIFE EASIER TO WRITE THIS!
 % 
 %     
 %     
