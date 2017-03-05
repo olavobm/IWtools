@@ -209,7 +209,7 @@ while linGrid
     %% Reflection off the bottom or the surface:
     % (I PROBABLY WANT TO SPLIT THIS, DEALING WITH POINTS OUTSIDE
     % OF THE GRID FIRST, AND BOTTOM REFLECTION LATER)
-    if (isnan(nowN2) && linX && linZ) || xzNow(2)<zg(1)
+    if (isnan(nowN2) && linX && linZ) || (xzNow(2)<zg(1) && linX)
         
         if isnan(nowN2)
             
@@ -353,6 +353,10 @@ while linGrid
                                      
         end
         
+%         if isempty(xaux)
+%             keyboard
+%         end
+        
         xzNow = [xaux, yaux];
         
         % Interpolate N at the current location:
@@ -366,7 +370,7 @@ while linGrid
             nowN2 = auxbla(end);  % approximate with the
                                   % closest to the bottom
         else
-            nowN2 = auxNprof2(1);  
+            nowN2 = auxNprof(1);   % surface value
         end
         
         if isnan(nowN2)
@@ -413,8 +417,7 @@ while linGrid
     %% Trace next point on the ray:
     xzTrc(1) = xzNow(1) + traceDx .* cos(rayAng);
     xzTrc(2) = xzNow(2) + traceDx .* sin(rayAng);
-    
-    
+       
     xzNow = xzTrc;
           	
     
