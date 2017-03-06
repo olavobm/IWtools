@@ -26,7 +26,7 @@ function wvAng = iwChar(wvf, N, f0)
 
 %% The dispersion relationship gives the tangent.
 
-wvTan = abs( sqrt((wvf.^2 - f0.^2)/(N.^2 - wvf.^2)) );
+wvTan = abs( sqrt((wvf.^2 - f0.^2)./(N.^2 - wvf.^2)) );
 
 wvAng = atan(wvTan);
 
