@@ -5,18 +5,28 @@ function checkModalFits(z, x, vmodes, zmds, lpltRecons, lpltAmp)
 %       - z: vertical coordinate of the data
 %       - x: data to decompose into vertical modes.
 %       - vmodes: MxN modal shape matrix with N modes.
-%       - zmds (optional):
+%       - zmds (optional): vertical coordinate of the modes. If not given,
+%                          it is assumed to be the same as the data.
 %       - lpltRecons: logical value for the reconstruction plot
 %       - lpltAmp: logical value for the amplitude versus fit modes plot.
 %
-% Plot modal amplitude as a function
+% Make a few plots that are useful for checking if the modal
+% decomposition is doing a "good" reconstruction of a SINGLE
+% (or a few) profiles.
 %
-%   PLOTS.... but I could give the data in the plots as outputs...
+% One plot is the sum of modes and the data (linked to input lpltRecons).
+% In fact, a little animation is made so one can see how the fit changes
+% by adding an increasing number modes.
 %
-%   I SHOULD PROBABLY INCLUDE COMPUTING THE MODES INSIDE....BECAUSE
-%   THIS PLOT IS ONLY GOOD FOR FITTING LOTS OF MODES, WHICH WE DO
-%   NOT DO ALL THE TIME.
+% The other plots (input lpltAmp) compares how the modal amplitude changes
+% as a function of how many modes are being fit.
 %
+% This function only considers fitting successive modes. In other words
+% it considers the columns of vmodes from 1 to i, where i is an index
+% that is looped over.
+%
+% TO DO: allow x to be a matrix with a small number of columns.
+% 
 % Olavo Badaro Marques, 09/Nov/2016
 
 
@@ -188,6 +198,3 @@ if lpltAmp
         
 end
 
-
-
-%%
