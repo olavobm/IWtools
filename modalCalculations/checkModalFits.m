@@ -60,8 +60,8 @@ end
 % there should be a big loop below for going over the columns x...
 
 
-%%
-
+%% Fit vertical modes, but using an increasing number
+% (i.e. use columns 1:1, 1:2, 1:3, ..., of vmodes):
 
 mdsAmp = NaN(nmds);
 
@@ -76,8 +76,7 @@ for i = 1:nmds
 end
 
 
-%%
-
+%% Modal reconstruction plot:
 
 if lpltRecons
     
@@ -119,8 +118,7 @@ if lpltRecons
 end
 
 
-%%
-
+%% Amplitude plots:
 
 if lpltAmp
     
@@ -158,7 +156,7 @@ if lpltAmp
     end
     
 	figure
-        set(gcf, 'Units', 'normalized', 'Position', [0.4 0.1 0.4 0.9])
+        newFigDims([10.5, 14])
         for i = 1:nsubplts
             subplot(nsubplts, 1, i)
                 plot(1:nmds, mdsAmp(i, :), '.k', 'MarkerSize', 40)
