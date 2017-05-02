@@ -10,12 +10,14 @@ function eta = rhop2eta(rhop, N, zRhoN, rho0)
 %   outputs:
 %       - eta: isopycnal displacement in meters.
 %
-% Linear approximation .....
+% Based on a linear approximation, compute isopycnal
+% displacement from a density anomaly (rhop) and a
+% background buoyancy frequency profile (N).
 %
 % Olavo Badaro Marques, 28/Apr/2017.
 
 
-%%
+%% Parameters:
 
 g = 9.8;
 
@@ -37,7 +39,7 @@ else
 end
 
 n2 = NatRho.^2;
-n2 = repmar(n2, 1, size(rhop, 2));
+n2 = repmat(n2, 1, size(rhop, 2));
 
 
 %% Isopycnal displacement calculation:

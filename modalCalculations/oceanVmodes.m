@@ -154,11 +154,7 @@ A = diag(-N2);
 opts.issym = lsym;
 opts.isreal = 1;
 
-try
 [Veigfcn, eigvals2] = eigs(D2, A, nmds, 'SM', opts);
-catch
-    keyboard
-end
 
 
 %% Sort modes by eigenspeed:

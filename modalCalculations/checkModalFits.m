@@ -155,8 +155,7 @@ if lpltAmp
         nsubplts = nmds;
     end
     
-	figure
-        newFigDims([10.5, 14])
+    newFigDims([10.5, 14])
         for i = 1:nsubplts
             subplot(nsubplts, 1, i)
                 plot(1:nmds, mdsAmp(i, :), '.k', 'MarkerSize', 40)
