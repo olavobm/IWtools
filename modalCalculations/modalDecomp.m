@@ -220,7 +220,9 @@ if ndiffMds==nprofs
     
     for i1 = 1:nprofs
     
-        [Hmodes, Vmodes, ~] = inertGravVmodes(zN2, D, ...
+%         [Hmodes, Vmodes, ~] = inertGravVmodes(zN2, D, ...
+%                                               N2(:, indN2col(i1)), nmds);
+        [Hmodes, Vmodes, ~] = oceanVmodes(zN2, D, ...
                                               N2(:, indN2col(i1)), nmds);
         
         MdsProf.Hmodes(:, i1, :) = Hmodes;
