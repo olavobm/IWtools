@@ -1,5 +1,5 @@
-function [pp, pbc] = presIW_fromEta(z, eta, N2, rho0)
-%% pp = PRESIW_FROMETA(z, eta)
+function [pp, pbc] = eta2pp(z, eta, N2, rho0)
+%% pp = ETA2PP(z, eta)
 %
 %  inputs:
 %    - z: vector of the data points depths in meters. Depth is greater
@@ -13,7 +13,7 @@ function [pp, pbc] = presIW_fromEta(z, eta, N2, rho0)
 %    - pp: pressure perturbartion.git 
 %    - pbc:
 %
-% The function PRESIW_FROMETA computes the pressure perturbation profile
+% ETA2PP computes the pressure perturbation profile
 % due to hydrostatic internal wave (hydrostatic in the sense that
 % wavefrequency^2 << N^2).
 %
@@ -24,7 +24,8 @@ function [pp, pbc] = presIW_fromEta(z, eta, N2, rho0)
 % Olavo Badaro Marques, 27/Oct/2016.
 
 
-%%
+
+%% Define default value for reference density:
 
 if ~exist('rho0', 'var')
     rho0 = 1025;
