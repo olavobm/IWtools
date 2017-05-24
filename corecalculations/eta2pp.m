@@ -1,5 +1,5 @@
-function [pp, pbc] = eta2pp(z, eta, N2, rho0)
-%% pp = ETA2PP(z, eta)
+function [pp, psurf] = eta2pp(z, eta, N2, rho0)
+%% [pp, psurf] = ETA2PP(z, eta, N2, rho0)
 %
 %  inputs:
 %    - z: vector of the data points depths in meters. Depth is greater
@@ -10,19 +10,19 @@ function [pp, pbc] = eta2pp(z, eta, N2, rho0)
 %    - rho0 (optional): reference potential density (default is 1025).
 %
 %  outputs:
-%    - pp: pressure perturbartion.git 
-%    - pbc:
+%    - pp: pressure perturbartion.
+%    - psurf: baroclinic surface pressure.
 %
-% ETA2PP computes the pressure perturbation profile
-% due to hydrostatic internal wave (hydrostatic in the sense that
-% wavefrequency^2 << N^2).
+% ETA2PP computes the pressure perturbation profile due to hydrostatic
+% internal wave (hydrostatic in the sense that wavefrequency^2 << N^2).
 %
-% --------------------------   NaNs????  --------------------------
+% TO DO:
+%   - NaNs????
+%   - possibility of specify N2 in a different grid than eta.
 %
 % The calculation assumes the depth integral of pp is zero. ??????????
 %
 % Olavo Badaro Marques, 27/Oct/2016.
-
 
 
 %% Define default value for reference density:
@@ -54,6 +54,7 @@ if isvector(N2)
     N2 = repmat(N2, 1, size(eta, 2));
     
 end
+
 
 %% Create the boundary condition according to normal modes (N2)
 
@@ -101,14 +102,14 @@ if ~isempty(cGoodData)
     Dzrange = z(end)-z(1);
     
     % Boundary condition:
-    pbc = pptop(cGoodData) - (1/Dzrange) .* trapz(z, intRho(:, cGoodData));
+    psurf = pptop(cGoodData) - (1/Dzrange) .* trapz(z, intRho(:, cGoodData));
     
     % Make a pbc matrix (here, it is almost always the
     % case that pbc is a matrix and not a vector):
-	pbc = repmat(pbc, size(rhopg, 1), 1);
+	psurf = repmat(psurf, size(rhopg, 1), 1);
     
     % Compute the pressure perturbation
-    pp(:, cGoodData) = pbc + intRho(:, cGoodData);
+    pp(:, cGoodData) = psurf + intRho(:, cGoodData);
 end
 
 if ~isempty(cNanNoRep)
@@ -124,14 +125,14 @@ if ~isempty(cNanNoRep)
         Dzrange(i) = zgood(end)-zgood(1);
         
         % Boundary condition:
-        pbc = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
+        psurf = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
 
         % NEED TO DEAL WITH NANS PROPERLY!!!!
         
         % Compute the pressure perturbation (no need to use repmat
         % since we are dealing with profiles individually):
 %         try
-        pp(lgood, cNanNoRep(i)) = pbc + intRho(lgood, cNanNoRep(i));
+        pp(lgood, cNanNoRep(i)) = psurf + intRho(lgood, cNanNoRep(i));
 %         catch
 %             keyboard
 %         end
