@@ -16,13 +16,12 @@ function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
 %    - psurf: baroclinic surface pressure.
 %
 % ETA2PP computes the pressure perturbation profile due to hydrostatic
-% internal wave (hydrostatic in the sense that wavefrequency^2 << N^2).
+% internal wave (hydrostatic valid when wavefrequency^2 << N^2).
+% The calculation assumes the depth integral of pp is zero.
+% Is it possible/relevant to use different boundary conditions ?????
 %
-% TO DO:
-%   - NaNs????
-%   - possibility of specify N2 in a different grid than eta.
-%
-% The calculation assumes the depth integral of pp is zero. ??????????
+% The calculation is equation (1) from Kunze et al. (2002): Internal
+% Waves in Monterey Submarine Canyon.
 %
 % Olavo Badaro Marques, 27/Oct/2016.
 
@@ -69,9 +68,6 @@ if isvector(N2)
 end
 
 
-%% Create the boundary condition according to normal modes (N2)
-
-
 %% Compute the perturbation density multiplied
 % by the gravity acceleration:
 
@@ -89,7 +85,6 @@ pptop = zeros(1, size(rhopg, 2));
 pp = NaN(size(rhopg));
 psurf = NaN(1, size(rhopg, 2));
 
-% also prea-allocate space for pbc
 
 % -------------------------------------------------------------------------
 % ACTUALLY, IT IS BETTER TO DO THE PROFILE OPTIMIZATION THING, AFTERALL
@@ -107,7 +102,7 @@ cNanNoRep = unique(cnan);
 
 cGoodData = setdiff(allcols, cNanNoRep);
 
-% -------
+% ---------------
 intRho = NaN(size(rhopg));
 
 if ~isempty(cGoodData)
@@ -125,6 +120,7 @@ if ~isempty(cGoodData)
     pp(:, cGoodData) = psurf + intRho(:, cGoodData);
 end
 
+% ---------------
 if ~isempty(cNanNoRep)
     
     Dzrange = NaN(1, size(rhopg(:, cNanNoRep), 2));
@@ -150,32 +146,5 @@ if ~isempty(cNanNoRep)
     
 end
 
-
-
-
-% % % % %% In case there are NaNs, we should deal with each profile individually
-% % % % % (or at least all profiles with NaNs inidividually):
-% % % % if any(isnan(rhopg(:)))
-% % % %     
-% % % %     
-% % % %     
-% % % % %% If there are NO NaNs, we can deal with all profiles at once:   
-% % % % else
-% % % %             
-% % % %     intRho = cumtrapz(z, rhopg);
-% % % %     
-% % % %     Dzrange = z(end)-z(1);
-% % % %     
-% % % %     % Boundary condition:
-% % % %     pbc = pptop - (1/Dzrange) .* trapz(z, intRho);
-% % % %     
-% % % %     % Make a pbc matrix (here, it is almost always the
-% % % %     % case that pbc is a matrix and not a vector):
-% % % % 	pbc = repmat(pbc, size(rhopg, 1), 1);
-% % % %     
-% % % %     % Compute the pressure perturbation
-% % % %     pp = pbc + intRho;
-% % % %     
-% % % % end
 
 
