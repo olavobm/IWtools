@@ -1,4 +1,4 @@
-function [pp, psurf] = eta2pp(z, eta, N2, rho0)
+function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
 %% [pp, psurf] = ETA2PP(z, eta, N2, rho0)
 %
 %  inputs:
@@ -7,6 +7,8 @@ function [pp, psurf] = eta2pp(z, eta, N2, rho0)
 %    - eta: vector or matrix of the isopycnal displacement.
 %    - N2: background buoyancy frequency squared. If it is a
 %          vector, it is applied everywhen in eta.
+%    - zN2 (optional): depth where N2 is specified. If not given, code
+%                      assumes N2 is given at the same depth as eta.
 %    - rho0 (optional): reference potential density (default is 1025).
 %
 %  outputs:
@@ -29,6 +31,17 @@ function [pp, psurf] = eta2pp(z, eta, N2, rho0)
 
 if ~exist('rho0', 'var')
     rho0 = 1025;
+end
+
+
+%% If input zN2 is given, then interpolate N2 to the same depths as eta:
+
+if ~exist('zN2', 'var')
+    
+else
+    
+    N2 = interp1(zN2, N2, z);
+    
 end
 
 
@@ -74,6 +87,7 @@ rhopg = rho0 .* eta .* N2;
 pptop = zeros(1, size(rhopg, 2));
 
 pp = NaN(size(rhopg));
+psurf = NaN(1, size(rhopg, 2));
 
 % also prea-allocate space for pbc
 
@@ -102,10 +116,9 @@ if ~isempty(cGoodData)
     Dzrange = z(end)-z(1);
     
     % Boundary condition:
-    psurf = pptop(cGoodData) - (1/Dzrange) .* trapz(z, intRho(:, cGoodData));
+    psurf(cGoodData) = pptop(cGoodData) - (1/Dzrange) .* trapz(z, intRho(:, cGoodData));
     
-    % Make a pbc matrix (here, it is almost always the
-    % case that pbc is a matrix and not a vector):
+    % Make psurf to add it to intRho:
 	psurf = repmat(psurf, size(rhopg, 1), 1);
     
     % Compute the pressure perturbation
@@ -125,17 +138,13 @@ if ~isempty(cNanNoRep)
         Dzrange(i) = zgood(end)-zgood(1);
         
         % Boundary condition:
-        psurf = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
-
+        psurf(cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
+        
         % NEED TO DEAL WITH NANS PROPERLY!!!!
         
         % Compute the pressure perturbation (no need to use repmat
         % since we are dealing with profiles individually):
-%         try
-        pp(lgood, cNanNoRep(i)) = psurf + intRho(lgood, cNanNoRep(i));
-%         catch
-%             keyboard
-%         end
+        pp(lgood, cNanNoRep(i)) = psurf(cNanNoRep(i)) + intRho(lgood, cNanNoRep(i));
         
     end
     
