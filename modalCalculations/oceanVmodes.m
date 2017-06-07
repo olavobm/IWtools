@@ -2,7 +2,7 @@ function [Heigfcn, Veigfcn, ce] = oceanVmodes(z, H, N2, nmds)
 % [Heigfcn, Veigfcn, ce] = OCEANVMODES(z, H, N2, nmds)
 % 
 %   inputs:
-%       - z: depth grid vector where N2 is specified (can be irregular).
+%       - z: depth grid vector where N2 is specified on (can be irregular).
 %            The first (last) element MUST BE greater (less) than 0 (H),
 %            to emphasize that N2 at z = 0 (z = H) is irrelevant for the
 %            calculation.
@@ -11,18 +11,19 @@ function [Heigfcn, Veigfcn, ce] = oceanVmodes(z, H, N2, nmds)
 %             contain NaNs.
 %       nmds: number of modes to extract (from 0 to nmds).
 %
-%  maybe include....
-%       flag_0 [1 x 1] Set to 1 (default) to include mode-0, set to 0 to exclude mode-0
-%
 %   outputs:
-%       - Heigfcn [length(z)+2, nmds]: pressure and horizontal
-%                                      velocity eigenfunctions
-%                                      (each column is a mode).
-%       - Veigfcn [        "        ]: buoyancy and vertical
-%                                      velocity eigenfunctions.
+%       - Heigfcn: matrix of size (length(z)+2, nmds), where each column
+%                  is an eigenfunction of pressure (and horizontal
+%                  velocity). Increasing mode with increasing column index.
+%       - Veigfcn: same as Heigfcn, but for the eigenfunctions of
+%                  buoyancy (and vertical velocity).
 %       - ce: eigenspeeds.
 %
-%       - He: equivalent depth... I need rotation to correct g.
+% TO DO:
+%       output - He: equivalent depth... I need rotation to correct g.
+%
+%       input - lmode0: Set true (default) to include mode-0
+%                       set false to exclude mode-0
 %
 % The eigenmode outputs are normalized such that each mode is bounded
 % by -1 and +1, which makes them non-orthogonal (IN GENERAL?? WHAT ABOUT CONSTANT STRATIFICATION???). Note that their number
