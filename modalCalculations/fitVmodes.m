@@ -26,6 +26,14 @@ function [mdsAmp, vmodes, xRes] = fitVmodes(z, x, vmodes, zmds)
 % Olavo Badaro Marques, 7/Nov/2016.
 
 
+%%
+if ~isvector(z)
+    error(['Data depth array is NOT a vector. I could potentially ' ...
+           'allow it to be a matrix, but it will require some work'])
+end
+    
+
+
 %% Check whether a z-grid (zmds) was specified for the
 % modes. If not, assumes it is the same as the data, but
 % they must have the same number of rows:
@@ -58,7 +66,7 @@ n = size(x, 2);
 if ~isequal(z, zmds)
     
     vmodesinterp = NaN(length(z), nmds);
-    
+
     for i = 1:nmds
         vmodesinterp(:, i) = interp1(zmds, vmodes(:, i), z);
     end
@@ -88,12 +96,12 @@ for i = 1:n
     end   
     
     % Project the ith column of x onto the normal modes:
-    m = ( vmodes(lgood,  :)' * vmodes(lgood,  :)) \ ...
-        ( vmodes(lgood,  :)' * x(lgood, i));
+    Gmodes = vmodes(lgood,  :);
+    
+    m = (Gmodes' * Gmodes) \ (Gmodes' * x(lgood, i));
     
     % Assign m to ith column of mdsAmp:
     mdsAmp(:, i) = m;
-    
     
 end
 
