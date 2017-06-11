@@ -34,7 +34,9 @@ rho0 = 1025;
 g = 9.8;
 
 
-%%
+%% N2 is a vector, turn it into a matrix of the same size as x:
+
+% TO DO: IMPROVE MATCHING THE SIZE
 
 if ~isequal(size(n2backg), size(x))
     n2backg = repmat(n2backg, 1, size(x, 2), size(x, 3));
