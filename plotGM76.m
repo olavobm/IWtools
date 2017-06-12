@@ -1,10 +1,11 @@
-function gmSpec = plotGM76(f0, N0, fgrid)
+function gmSpec = plotGM76(f0, N0, fgrid, lnewfig)
 % gmSpec = PLOTGM76(f0, N0, fgrid)
 %
 %   inputs:
 %       - f0
 %       - N0
 %       - fgrid (optional):
+%       - lnewfig (optional): default is false.
 %
 %   outputs:
 %       - gmSpec:
@@ -12,6 +13,12 @@ function gmSpec = plotGM76(f0, N0, fgrid)
 % TO DO: break this function down into calculating / plotting.
 %
 % Olavo Badaro Marques, 09/Jun/2017.
+
+%%
+
+if ~exist('lnewfig', 'var')
+    lnewfig = false;
+end
 
 
 %%
@@ -33,26 +40,14 @@ end
 
 %%
 
-params = Gm76Params;
-
-S = GmOm('Vel', fgrid, f0, N0, params);
-
-
-%% Convert frequency vector from radians
-% per second to cycles per day:
-
-freqFac = (24*3600)/(2*pi);
-
-fvecGM = fgrid * freqFac;
-SpecGM = S / freqFac;
+gmSpec = uGM76(f0, N0, fgrid);
 
 
 %%
 
-gmSpec.freq = fvecGM;
-gmSpec.psd = SpecGM;
+if lnewfig
+    figure
+end
 
-
-%
-% figure
-    loglog(gmSpec.freq, gmSpec.psd)
+    %
+    loglog(gmSpec.fvec, gmSpec.spec)
