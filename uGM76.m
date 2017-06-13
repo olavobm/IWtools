@@ -2,7 +2,8 @@ function specGM = uGM76(f0, N0, fgrid)
 %
 %
 %
-%
+% Olavo Badaro, 12/Jun/2017.
+
 
 %%
 

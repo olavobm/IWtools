@@ -29,18 +29,21 @@ flow = f0;
 
 %%
 
-if ~exist('fgrid', 'var')
+if ~exist('fgrid', 'var') || fgrid
     
     xlimaux = get(gca, 'XLim');
 %     fgrid = linspace(flow, xlimaux(2), 5000);
     fgrid = linspace(flow, 0.001, 5000);
+else
+    
+    fgrid_norm = fgrid / ((24*3600)/(2*pi));
     
 end
 
 
 %%
 
-gmSpec = uGM76(f0, N0, fgrid);
+gmSpec = uGM76(f0, N0, fgrid_norm);
 
 
 %%
