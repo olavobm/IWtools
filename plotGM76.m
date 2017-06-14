@@ -53,4 +53,4 @@ if lnewfig
 end
 
     %
-    loglog(gmSpec.fvec, gmSpec.spec)
+    loglog(gmSpec.freq, gmSpec.spec)
