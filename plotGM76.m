@@ -2,15 +2,16 @@ function gmSpec = plotGM76(f0, N0, fgrid, lnewfig)
 % gmSpec = PLOTGM76(f0, N0, fgrid)
 %
 %   inputs:
-%       - f0
-%       - N0
-%       - fgrid (optional):
-%       - lnewfig (optional): default is false.
+%       - f0: Coriolis parameter (radians per second).
+%       - N0: buoyancy frequency (radians per second).
+%       - fgrid (optional): frequencies where the GM spectrum is computed.
+%       - lnewfig (optional): logical value, where true make the plot in
+%                             a new figure. Default is false.
 %
 %   outputs:
-%       - gmSpec:
-%
-% TO DO: break this function down into calculating / plotting.
+%       - gmSpec: structure with two fields (freq and spec), with the
+%                 GM spectrum -- the frequencies and the values of the
+%                 spectrum.
 %
 % Olavo Badaro Marques, 09/Jun/2017.
 

@@ -4,10 +4,14 @@ function specGM = uGM76(f0, N0, fgrid, freqFac)
 %   inputs:
 %       - f0: Coriolis parameter (radians per second).
 %       - N0: bouyancy frequency (radians per second).
-%       - fgrid: frequency (radians per second).
+%       - fgrid: frequencies (radians per second) where the GM spectrum
+%                is computed.
+%       - freqFac (optional): ....
 %
 %   outputs:
-%       - specGM:
+%       - specGM: structure with two fields (freq and spec), with the
+%                 GM spectrum -- the frequencies and the values of the
+%                 spectrum.
 %
 % Olavo Badaro, 12/Jun/2017.
 
