@@ -3,7 +3,7 @@ function [cp, cg] = cn2cpcg(cn, freq, lat)
 %
 %   inputs:
 %       - cn: eigenspeed of the n'th vertical mode.
-%       - freq: wave frequency (in radians per second).
+%       - freq: wave frequency (in cycles per day).
 %       - lat: latitude (in degrees).
 %
 %   outputs:
@@ -17,20 +17,27 @@ function [cp, cg] = cn2cpcg(cn, freq, lat)
 % Olavo Badaro Marques, 28/Jun/2017.
 
 
-%% Calculate Coriolis parameter:
+%% Calculate Coriolis parameter
 
 omegaEarth = 7.292115e-5;	% Earth's rotation rate
 
-f0 = 2 * omegaEarth * sin(lat);
+f0 = 2 * omegaEarth * sind(lat);
 
 
-%% Compute phase speed and group velocity magnitude:
+%% Convert wave frequency from cycles per day to radians per second
+
+freq = freq .* (2*pi/(24*3600));
+
+
+%% Compute phase speed and group velocity magnitude
+
+times_factor = freq/(sqrt(freq.^2 - f0.^2));
 
 %
-cp = cn .* freq/(sqrt(freq.^2 - f0.^2));
+cp = cn .* times_factor;
 
 %
-cg = cn .* sqrt(freq.^2 - f0.^2)/freq;
+cg = cn ./ times_factor;
 
 
 
