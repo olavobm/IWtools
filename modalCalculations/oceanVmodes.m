@@ -1,23 +1,25 @@
-function [Heigfcn, Veigfcn, ce] = oceanVmodes(z, H, N2, nmds)
-% [Heigfcn, Veigfcn, ce] = OCEANVMODES(z, H, N2, nmds)
+function oceanModes = oceanVmodes(z, H, N2, nmds)
+% oceanModes = OCEANVMODES(z, H, N2, nmds)
 % 
-%   inputs:
+%   inputs
 %       - z: depth grid vector where N2 is specified on (can be irregular).
 %            The first (last) element MUST BE greater (less) than 0 (H),
 %            to emphasize that N2 at z = 0 (z = H) is irrelevant for the
 %            calculation.
 %       - H: total water depth.
-%       - N2: vector with buoyancy frequency squared. Must NOT
-%             contain NaNs.
-%       nmds: number of modes to extract (from 0 to nmds).
+%       - N2: vector with buoyancy frequency squared. NO NaNs allowed.
+%       - nmds: number of modes to extract (from 0 to nmds).
 %
-%   outputs:
-%       - Heigfcn: matrix of size (length(z)+2, nmds), where each column
-%                  is an eigenfunction of pressure (and horizontal
-%                  velocity). Increasing mode with increasing column index.
-%       - Veigfcn: same as Heigfcn, but for the eigenfunctions of
-%                  buoyancy (and vertical velocity).
-%       - ce: eigenspeeds.
+%   outputs
+%       - oceanModes: structure variable with the following field
+%           * z: depth vector associated with the modes.
+%           * Heigfcn: matrix of size (length(z)+2, nmds), where
+%                      each column is an eigenfunction of pressure
+%                      (and horizontal velocity). Increasing mode with
+%                      increasing column index.
+%           * Veigfcn: same as Heigfcn, but for the eigenfunctions of
+%                      buoyancy (and vertical velocity).
+%           * ce: eigenspeeds.
 %
 % TO DO:
 %       output - He: equivalent depth... I need rotation to correct g.
@@ -26,7 +28,8 @@ function [Heigfcn, Veigfcn, ce] = oceanVmodes(z, H, N2, nmds)
 %                       set false to exclude mode-0
 %
 % The eigenmode outputs are normalized such that each mode is bounded
-% by -1 and +1, which makes them non-orthogonal (IN GENERAL?? WHAT ABOUT CONSTANT STRATIFICATION???). Note that their number
+% by -1 and +1, which makes them non-orthogonal (IN GENERAL?? WHAT ABOUT
+% CONSTANT STRATIFICATION???). Note that their number
 % of rows is equal to length(z)+2, because the input z does not include
 % the surface and bottom whereas the output modes include values there.
 %
@@ -68,7 +71,7 @@ function [Heigfcn, Veigfcn, ce] = oceanVmodes(z, H, N2, nmds)
 % Olavo Badaro Marques, 31/10/2016.
 
 
-%% Check inputs:
+%% Check inputs
 
 if ~isvector(z)
     error('Input z is not a vector!')
@@ -77,18 +80,21 @@ else
         z = z(:);
     end
     
-    if z(1)<=0
-        error(['The first element of the depth vector must be greater ' ...
-               'than 0 (the surface), since N2 at the surface is not '  ...
-               'used in the calculation.'])
+    if z(1)<0
+        error(['The first element of the depth vector must ' ...
+               'be greater or equal than 0 (the surface).'])
     end
     
-    if z(end)>=H
-        error(['The last element of the depth vector must be less '   ...
-               'than the water depth, since N2 at the bottom is not ' ...
-               'used in the calculation.'])
-        
+    if z(end)>H
+        error(['The last element of the depth vector must '   ...
+               'be less or equal than the water depth.'])
     end
+    
+    % If first (last) depth levels are top (bottom), remove
+    % them. Afterall, they are not used in the calculation
+    if z(1)==0;    z = z(2:end);   N2 = N2(2:end);    end
+    if z(end)==H;  z = z(1:end-1); N2 = N2(1:end-1);  end
+    
 end
 
 nz = length(z);
@@ -97,7 +103,7 @@ nz = length(z);
 %% If not specified as input, choose number of modes. Since the
 % maximum number of modes that can be computed is limited by
 % the number of observations, set a fixed max number of modes
-% in case there are too many data point:
+% in case there are too many data point
 
 % FORMALLY, WHAT IS THE CONSTRAIN IN THE NUMBER OF MODES???????????
 % for n = 3, it's fine to get 3 modes. For n = 35, it only works up
@@ -118,7 +124,7 @@ end
 
 %% Check whether z is regularly spaced (in which case
 % the derivative matrix is symmetric and the solution
-% of the eigenvalue problem can be optimized):
+% of the eigenvalue problem can be optimized)
 
 
 % EVEN IF IT IS REGULAR, IT IS PROBABLY NEVER GOING TO BE REGULAR
@@ -135,7 +141,7 @@ lsym = all(dz == dz(1));   % true if z is regular
 
 
 %% Second derivative matrix for a general position vector,
-% assuming homogeneous Dirichlet boundary conditions:
+% assuming homogeneous Dirichlet boundary conditions
 
 % Add surface and bottom to vector z, where we have boundary conditions:
 zsb = [0; z; H];
@@ -145,12 +151,12 @@ n = nz + 2;
 D2 = EignProblemD2(zsb);
 
 
-%% Medium matrix A:
+%% Medium matrix A
 
 A = diag(-N2);
 
 
-%% Solve generalized eigenvalue problem:
+%% Solve generalized eigenvalue problem
 
 opts.issym = lsym;
 opts.isreal = 1;
@@ -158,7 +164,7 @@ opts.isreal = 1;
 [Veigfcn, eigvals2] = eigs(D2, A, nmds, 'SM', opts);
 
 
-%% Sort modes by eigenspeed:
+%% Sort modes by eigenspeed
 
 % Get the diagonal values with the eigenvalues:
 eigvals2 = diag(eigvals2);
@@ -192,8 +198,8 @@ Heigfcn = centeredDeriv(zsb, Veigfcn);
 %       COMPLICATED OR MUCH LESS EFFICIENT?
 
 
-%% Normalization of the eigenfunctions such that
-% the are bounded by -1 and +1:
+%% Normalization of the eigenfunctions
+% such that the are bounded by -1 and +1
 
 Heigmax = max(abs(Heigfcn));
 Veigmax = max(abs(Veigfcn));
@@ -233,18 +239,26 @@ Veigfcn = Veigfcn ./ repmat(Veigmax, [n 1]);
 
 
 %% Multiply by -1 the modes that have negative
-% surface Heigfcn (simply for aesthetic puporses):
+% surface Heigfcn (simply for aesthetic puporses)
 
 lcols = Heigfcn(1, :) < 0;
 Heigfcn(:, lcols) = -Heigfcn(:, lcols);
 Veigfcn(:, lcols) = -Veigfcn(:, lcols);
 
 
-%% Add 0th mode:
+%% Add 0th mode
 
 Heigfcn = [ones(n, 1), Heigfcn];
 Veigfcn = [(H-zsb)./H, Veigfcn];
     
 ce = [sqrt(9.81*H); ce];
 
+
+%% Assign output variable
+
+oceanModes.z = zsb;
+% oceanModes.modes = 
+oceanModes.Hfcn = Heigfcn;
+oceanModes.Vfcn = Veigfcn;
+oceanModes.ce = ce;
 
