@@ -1,5 +1,5 @@
 function eta = rhop2eta(rhop, N, zRhoN, rho0)
-% eta = RHOP2ETA(rhop, N, zN2, rho0)
+% eta = RHOP2ETA(rhop, N, zRhoN, rho0)
 %
 %   inputs:
 %       - rhop: density perturbation (kg per m^3).

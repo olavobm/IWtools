@@ -1,17 +1,26 @@
 function eta = linearDisplacement(zxp, xp, zxB, xB, cutoff)
-% eta = LINEARDISPLACEMENT(xp, xB, zXpB, cutoff)
+% eta = LINEARDISPLACEMENT(zxp, xp, zxB, xB, cutoff)
 %
 %   inputs:
-%       - xp:
-%       - xB:
-%       - zXB:
+%       - zxp: depth vector associated with xp.
+%       - xp: x "prime", i.e. the variability relative to a background.
+%       - zxB: depth vector for xB
+%       - xB: x background profile.
 %       - cutoff (optional): minimum threshold for dXBdz (default is 0,
 %                            which is the same as no threshold).  
 %
 %   outputs:
 %       - eta: vertical displacement.
 %
-% MAYBE TO DO: sort zxB?
+% Compute linear vertical displacement of the quantity required to
+% explain the anomaly xp based on the vertical gradient of the
+% background profile xB.
+%
+%
+% TO DO:
+%   - I should include some check for non-monotonically
+%     increasing/decreasing background profiles.
+%   - MAYBE TO DO: sort zxB?
 %
 % Olavo Badaro Marques, 02/05/2017.
 

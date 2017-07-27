@@ -2,7 +2,7 @@ function wvhlen = cteN_wvhlen(freq, N, f, D, nmd)
 % wvhlen = CTEN_WVHLEN(freq, N, f, D, nmd)
 %
 %   inputs:
-%       - freq: wave frequency (in radians per second).
+%       - freq: wave frequency.
 %       - N: buoyancy frequency.
 %       - f: Coriolis parameter.
 %       - D: fluid depth.
