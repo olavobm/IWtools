@@ -13,6 +13,7 @@ function oceanModes = oceanVmodes(z, H, N2, nmds)
 %   outputs
 %       - oceanModes: structure variable with the following field
 %           * z: depth vector associated with the modes.
+%           * nmode: number of the mode (columns of the eigenfunctions).
 %           * Heigfcn: matrix of size (length(z)+2, nmds), where
 %                      each column is an eigenfunction of pressure
 %                      (and horizontal velocity). Increasing mode with
@@ -257,7 +258,7 @@ ce = [sqrt(9.81*H); ce];
 %% Assign output variable
 
 oceanModes.z = zsb;
-% oceanModes.modes = 
+oceanModes.nmode = 0 : nmds;
 oceanModes.Hfcn = Heigfcn;
 oceanModes.Vfcn = Veigfcn;
 oceanModes.ce = ce;
