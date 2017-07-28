@@ -39,7 +39,34 @@ else
 end
 
 n2 = NatRho.^2;
-n2 = repmat(n2, 1, size(rhop, 2));
+
+
+%% If the sizes of n2 and rhop are not the same, then
+% match the size of n2 to be the same as rhop
+
+n2size = size(n2);
+rpsize = size(rhop);
+
+% If the variables do NOT have the
+% same size, than match n2 to rhop
+if ~isequal(n2size, rpsize)
+    
+    if isvector(n2)
+        
+        n2 = n2(:);
+        
+        repdims = [1, rpsize(2:end)];
+        
+        n2 = repmat(n2, repdims);
+        
+    else
+        
+        % in this case, it may be that N2 is a
+        % matrix and rhop is a 3-D array.
+        
+    end
+        
+end
 
 
 %% Isopycnal displacement calculation:
