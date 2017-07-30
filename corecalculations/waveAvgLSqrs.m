@@ -1,5 +1,5 @@
-function [davg, xavg] = waveAvgLSqrs(x, d, prd, porder, wnd, wndptslide)
-% [davg, xavg] = WAVEAVGLSQRS(x, d, prd, wnd, wndptslide)
+function [davg, xavg] = waveAvgLSqrs(x, d, prd, porder, wnd, xfit)
+% [davg, xavg] = WAVEAVGLSQRS(x, d, prd, wnd, xfit)
 % 
 %   inputs:
 %       - x: vector or matrix.
@@ -131,9 +131,13 @@ else
     
     avgpart = [true, false(1, 2*length(imfWave.sine))];
     
-    [davg, xavg] = sliding_harmonicfit(x, d, wnd, wndptslide, ...
-                                       imfWave, avgpart);
-    
+%     [davg, xavg] = sliding_harmonicfit(x, d, wnd, wndptslide, ...
+%                                        imfWave, avgpart);
+%                                    
+                                   
+	%
+	davg = slidingHarmFit(x, d, xfit, wnd, imfWave, avgpart);
+    xavg = xfit;
 end
 
 
