@@ -1,11 +1,12 @@
-function ke = iwKenergy(u, v)
-% ke = IWKENERGY(u, v)
+function ke = iwKenergy(u, v, rho0)
+% ke = IWKENERGY(u, v, rho0)
 %
-%   inputs:
+%   inputs
 %       - u: x-component of the velocity.
-%       - v: y-component of the velocity.
+%       - v:   y- "       "  "     ".
+%       - rho0 (optional): density reference.
 %
-%   outputs:
+%   outputs
 %       - ke: kinetic energy density (J/m^2).
 %
 % IWKENERGY computes the horizontal kinetic energy density,
@@ -14,12 +15,14 @@ function ke = iwKenergy(u, v)
 % Olavo Badaro Marques, 28/Nov/2016.
 
 
-%% Define reference density value:
+%% Define reference density value
 
-rho0 = 1025;
+if ~exist('rho', 'var')
+    rho0 = 1025;
+end
 
 
-%% Compute kinetic energy density:
+%% Compute kinetic energy density
 
 ke = (rho0/2) * (u.^2 + v.^2);
 

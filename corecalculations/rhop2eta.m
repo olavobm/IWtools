@@ -1,13 +1,13 @@
 function eta = rhop2eta(rhop, N, zRhoN, rho0)
 % eta = RHOP2ETA(rhop, N, zRhoN, rho0)
 %
-%   inputs:
+%   inputs
 %       - rhop: density perturbation (kg per m^3).
 %       - N: time-averaged buoyancy frequency (radians per s).
 %       - zRhoN (optional): 1x2 cell array.
 %       - rho0 (optional): reference density.
 %
-%   outputs:
+%   outputs
 %       - eta: isopycnal displacement in meters.
 %
 % Based on a linear approximation, compute isopycnal

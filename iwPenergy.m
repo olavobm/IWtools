@@ -1,13 +1,14 @@
-function pe = iwPenergy(x, lrhoeta, n2backg)
-% pe = IWPENERGY(x, lrhoeta, n2backg, z)
+function pe = iwPenergy(x, lrhoeta, n2, zXN2)
+% pe = IWPENERGY(x, lrhoeta, n2, zXN2)
 %
-%   inputs:
+%   inputs
 %       - x: internal-wave driven density OR displacement perturbation.
 %       - lrhoeta: TRUE (FALSE) if x is density (displacement)
 %                  perturbation.
-%       - n2backg: background buoyancy frequency squared field.
+%       - n2: background buoyancy frequency squared.
+%       - zXN2 (optional): 1x2 cell array.
 %
-%   outputs:
+%   outputs
 %       - pe: potential energy.
 %
 % IWPENERGY computes the avilable potential energy density.
@@ -28,26 +29,37 @@ function pe = iwPenergy(x, lrhoeta, n2backg)
 % Olavo Badaro Marques, 28/Nov/2016.
 
 
-%% Define reference density value and gravitational acceleration:
+%% Define reference density value and gravitational acceleration
 
 rho0 = 1025;
 g = 9.8;
 
 
-%% N2 is a vector, turn it into a matrix of the same size as x:
+%%
 
-% TO DO: IMPROVE MATCHING THE SIZE
-
-if ~isequal(size(n2backg), size(x))
-    n2backg = repmat(n2backg, 1, size(x, 2), size(x, 3));
+if exist('zXN2', 'var')
+    
+    n2 = interp1(zXN2{2}, n2, zXN2{1});
+    
+    % should I allow zXN2{2} to be a matrix???
+    
 end
 
 
-%% Compute potential energy density:
+%% N2 is a vector, turn it into a matrix of the same size as x
+
+% TO DO: IMPROVE MATCHING THE SIZE
+
+if ~isequal(size(n2), size(x))
+    n2 = repmat(n2, 1, size(x, 2), size(x, 3));
+end
+
+
+%% Compute potential energy density
 
 if lrhoeta
-    pe = (0.5*g^2/rho0) * (x.^2)./n2backg;
+    pe = (0.5*g^2/rho0) * (x.^2)./n2;
 else
-    pe = (0.5*rho0) * (n2backg .* x.^2);
+    pe = (0.5*rho0) * (n2 .* x.^2);
 end
 
