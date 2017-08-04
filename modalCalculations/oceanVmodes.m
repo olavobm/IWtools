@@ -13,6 +13,7 @@ function oceanModes = oceanVmodes(z, H, N2, nmds)
 %   outputs
 %       - oceanModes: structure variable with the following field
 %           * z: depth vector associated with the modes.
+%           * N2: buoyancy frequency squared (same as input).
 %           * nmode: number of the mode (columns of the eigenfunctions).
 %           * Heigfcn: matrix of size (length(z)+2, nmds), where
 %                      each column is an eigenfunction of pressure
@@ -72,6 +73,14 @@ function oceanModes = oceanVmodes(z, H, N2, nmds)
 % Olavo Badaro Marques, 31/10/2016.
 
 
+%% Assign N2 to another variable, which is used in the calculation.
+% In the case where there are surface/bottom values, which do not go
+% into the calculation, this assignment allows the original N2 to
+% be assigned to the output variable
+
+N2diag = N2;
+
+
 %% Check inputs
 
 if ~isvector(z)
@@ -93,8 +102,8 @@ else
     
     % If first (last) depth levels are top (bottom), remove
     % them. Afterall, they are not used in the calculation
-    if z(1)==0;    z = z(2:end);   N2 = N2(2:end);    end
-    if z(end)==H;  z = z(1:end-1); N2 = N2(1:end-1);  end
+    if z(1)==0;    z = z(2:end);   N2diag = N2diag(2:end);    end
+    if z(end)==H;  z = z(1:end-1); N2diag = N2diag(1:end-1);  end
     
 end
 
@@ -154,7 +163,7 @@ D2 = EignProblemD2(zsb);
 
 %% Medium matrix A
 
-A = diag(-N2);
+A = diag(-N2diag);
 
 
 %% Solve generalized eigenvalue problem
@@ -258,6 +267,7 @@ ce = [sqrt(9.81*H); ce];
 %% Assign output variable
 
 oceanModes.z = zsb;
+oceanModes.N2 = N2;
 oceanModes.nmode = 0 : nmds;
 oceanModes.Hfcn = Heigfcn;
 oceanModes.Vfcn = Veigfcn;
