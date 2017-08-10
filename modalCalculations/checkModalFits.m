@@ -50,8 +50,8 @@ if ~exist('lpltRecons', 'var') || isempty(lpltRecons)
     lpltRecons = true;
 end
 
-if ~exist('lpltAmp', 'var') || isempty(lpltRecons)
-    lpltRecons = true;
+if ~exist('lpltAmp', 'var') || isempty(lpltAmp)
+    lpltAmp = true;
 end
 
 
