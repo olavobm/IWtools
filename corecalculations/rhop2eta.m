@@ -26,7 +26,8 @@ if ~exist('rho0', 'var')
 end
 
 
-%%
+%% Define N at the same depth levels as rhop. It is N if zRhoN
+% is not given as input or it has to be interpolated
 
 if ~exist('zRhoN', 'var') || isempty(zRhoN)
     
