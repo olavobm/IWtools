@@ -1,7 +1,7 @@
 function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx, botstruct)
-% [xzr] = RAYTRACEIW(xg, zg, N2, f0, wvf, xz0)
+% [xzr] = RAYTRACEIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx, botstruct)
 %
-%   inputs:
+%   inputs
 %       - xg: horizontal grid points.
 %       - zg: vertical grid points.
 %       - N: matrix of size (length(zg))x(length(xg)) with the buoyancy
@@ -16,7 +16,7 @@ function [xzRay] = raytraceIW(xg, zg, N, f0, wvf, xz0, rayQuad, traceDx, botstru
 %               * x: horizontal location.
 %               * z: bottom depth.
 %
-%   outputs:
+%   outputs
 %       - xzRay: Nx2 with N coordinates of the ray.
 %               xzr(1, :) is always equal to xz0.
 %
