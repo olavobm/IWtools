@@ -1,5 +1,5 @@
 function oceanModes = oceanVmodes(z, H, N2, nmds)
-% oceanModes = OCEANVMODES(z, H, N2, nmds)
+%% oceanModes = OCEANVMODES(z, H, N2, nmds)
 % 
 %   inputs
 %       - z: depth grid vector where N2 is specified on (can be irregular).
@@ -59,7 +59,9 @@ function oceanModes = oceanVmodes(z, H, N2, nmds)
 % equation and contains information about the vertical variation
 % of the medium (i.e. stratification) where the wave is propagating.
 %
-% IS IT ONLY SYMMETRICAL WHEN DZ(1) IS THE SAME AS THE SURFACE GAP???????
+% - IS IT ONLY SYMMETRICAL WHEN DZ(1) IS THE SAME AS THE SURFACE GAP??????
+% - NON-NORMALIZED EIGENFUNCTIONS?
+% - WHEN SOLVING THE EIGENVALUE PROBLEM, CAN I SOLVE FOR 0TH MODE??????
 %
 % Note sw_vmodes computes the eigenfunctions in a different, clever way.
 %
@@ -191,61 +193,55 @@ Veigfcn = Veigfcn(:, ind);
 
 % Add the boundary values at the surface (rigid lid) and
 % bottom, which satisfy the boundary conditions:
-Veigfcn = [zeros([1 nmds]); ...
+Veigfcn = [zeros([1, nmds]); ...
                Veigfcn    ; ...
-           zeros([1 nmds])];
+           zeros([1, nmds])];
 
+       
+%% Scale Veigfcn appropriately
+%
+% ----- SHOULD FIX THIS FOR IRREGULAR Z -----
+
+ffactor = sum(repmat([0; N2diag; 0], 1, nmds) .* Veigfcn.^2 .* mean(dz) , 1);
+ffactor = sqrt(ffactor);
+
+Veigfcn = Veigfcn ./ repmat(ffactor, size(Veigfcn, 1), 1);
+
+% % % This integral for each mode is 1
+% % sum(repmat([0; N2diag; 0], 1, nmds) .* bla.^2 .* mean(dz) , 1)
+
+
+%% Compute velocity/pressure modes by taking the derivative
+% of displacement modes. Then scale them appropriately.
+%
+% As far as I understand, it should not be necessary to scale
+% Heigfcn. My guess is that Heigfcn is "approximately" scaled
+% (integral close to 1), but maybe it is something else.
+       
 % Take derivative to get U and P structure (forward/backward
 % differences at the edges and centered differences in the interior):
 Heigfcn = centeredDeriv(zsb, Veigfcn);
-%
-% Actually, it is pn = cn^2h_z, but we are normalizing.... I SHOULD
-% DEFINITELY INCLUSE AN OPTION TO GET NON-NORMALIZED EIGENFUNCTIONS.
 
-% THE BIG QUESTIONS:
-%   - WHEN SOLVING THE EIGENVALUE PROBLEM, CAN I SOLVE FOR 0TH MODE??????
-%   - IF I SOLVE FOR IT, DOES IT MAKE THE CODE MORE
-%       COMPLICATED OR MUCH LESS EFFICIENT?
+% Scale Heigfcn
+ffactor = sum(Heigfcn.^2 .* mean(dz) , 1);
+ffactor = sqrt(ffactor);
 
+Heigfcn = Heigfcn ./ repmat(ffactor, size(Heigfcn, 1), 1);
 
-%% Normalization of the eigenfunctions
-% such that the are bounded by -1 and +1
-
-Heigmax = max(abs(Heigfcn));
-Veigmax = max(abs(Veigfcn));
-
-Heigfcn = Heigfcn ./ repmat(Heigmax, [n 1]);
-Veigfcn = Veigfcn ./ repmat(Veigmax, [n 1]);
+% % % This integral for each mode is 1
+% % sum(Heigfcn.^2 .* mean(dz) , 1)
 
 
-%%
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
-% Normalization of eigenfunctions focusing on the orthogonality condition??
-
-% dz = zsb(2:end) - zsb(1:end-1);
-% 
-% % - WHY THE AVERAGE AND NOT JUST THE INTEGRAL???
-% % Normalize Heigfcn eigenfunctions:
-% Hnorm = sqrt(repmat(trapz(zsb, Heigfcn.^2, 1), [n 1]) ./H);
-% Hnorm(Hnorm==0) = Inf;
-% Heigfcn = Heigfcn./Hnorm;
-% 
-% % Normalize Veigfcn eigenfunctions:
-% %
-% % NOW I NEED N2 AT THE SURFACE AND BOTTOM!!!!
-% % - what is this normalization???
-% % A = repmat(nansum(Veigfcn.^2.*repmat(N2, [1 nmds])*dz,1)./(H*ce.^2).', [n 1]).^(1/2);
-% 
-% N2matrix = repmat(N2, 1, nmds);
-% Vnorm = sqrt(repmat(trapz(zsb, Veigfcn.^2 .* N2matrix)./(H*ce.^2).', [n 1]));
-% 
-% Vnorm(Vnorm==0) = Inf;
-% Veigfcn = Veigfcn./Vnorm;
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
-% -------------------------------------------------------------------------
+% ------------------------------------------------------------------------
+% % %% Normalization of the eigenfunctions
+% % % such that the are bounded by -1 and +1
+% % 
+% % Heigmax = max(abs(Heigfcn));
+% % Veigmax = max(abs(Veigfcn));
+% % 
+% % Heigfcn = Heigfcn ./ repmat(Heigmax, [n 1]);
+% % Veigfcn = Veigfcn ./ repmat(Veigmax, [n 1]);
+% ------------------------------------------------------------------------
 
 
 %% Multiply by -1 the modes that have negative
