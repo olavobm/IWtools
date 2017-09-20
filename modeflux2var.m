@@ -17,6 +17,8 @@ function [varout] = modeflux2var(F, D, N2, freq, lat0, nmd, listvar)
 %
 % Result for constant buoyancy frequency.
 %
+% ????? AM I SURE OF THESE EQUATIONS ?????
+%
 %   TO DO:
 %       - clean the code.
 %       - add comments.
@@ -26,12 +28,16 @@ function [varout] = modeflux2var(F, D, N2, freq, lat0, nmd, listvar)
 
 %%
 
-if ~exist('mdn', 'var') || isempty(nmd)
+if ~exist('nmd', 'var') || isempty(nmd)
 	nmd = 1;
 end
 
 if ~exist('listvar', 'var')
 	listvar = {'u'};
+else
+    if ~iscell(listvar)
+        listvar = {listvar};
+    end
 end
 
 %
