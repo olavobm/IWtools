@@ -11,8 +11,9 @@ function depthintKE = modeAmp2KE(uamp, vamp, H, ntype)
 %       - depthintKE: depth0integrated kinetic energy (in J/m^2).
 %
 %
-%
-%
+% case 0 - standard normalization (depth integral
+%          squared is Kronecker delta)
+% case 1 - cte N2 and modal shapes are unscaled sines and cosines.
 %
 %
 % Olavo Badaro Marques, 21/Sep/2017.
@@ -40,7 +41,7 @@ switch ntype
         
         kefactor = H/2;
         
-% % %     case 2    % Not very practical....
+% % %     case 2
 % % %         
 % % %         kefactor = trapz(zmod, ModShape.^2);
 end

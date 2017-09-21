@@ -12,6 +12,9 @@ function depthintPE = modeAmp2PE(pamp, H, N2, modeProf, nmd)
 %       - depthintPE: depth0integrated kinetic energy (in J/m^2).
 %
 %
+% case 0 - arbitrary N2
+% case 1 - cte N2 and modal shapes are unscaled sines and cosines.
+%
 % Olavo Badaro Marques, 21/Sep/2017.
 
 
