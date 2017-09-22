@@ -1,12 +1,12 @@
-function [varout] = modeflux2var(F, D, N2, freq, lat0, nmd, listvar)
-% [varout] = MODEFLUX2VAR(F, D, N2, freq, lat0, nmd, listvar)
+function [varout] = modeflux2var(F, D, N2, lat0, freq, nmd, listvar)
+% [varout] = MODEFLUX2VAR(F, D, N2, lat0, freq, nmd, listvar)
 %
 %   inputs
 %       - F: depth-integrated energy flux (in W/m).
 %       - D: water depth.
 %       - N2: buoyancy frequency squared (radians per second squared).
-%       - freq: wave frequency (cycles per day).
 %       - lat0: latitude.
+%       - freq: wave frequency (cycles per day).
 %       - nmd (optional): mode number (default is 1).
 %       - listvar (optional): cell array with string of
 %                             variables to look at (default is u).
