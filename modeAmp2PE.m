@@ -2,15 +2,21 @@ function depthintPE = modeAmp2PE(pamp, H, N2, modeProf, nmd)
 % depthintPE = modeAmp2PE(pamp, H, N2, ntype)
 %
 %   inputs
-%       - pamp: pressur modal amplitude.
+%       - pamp: pressure modal amplitude.
 %       - H: water depth (in meters).
 %       - N2: buoyancy frequency squared (in radians per s^2).
 %       - nmd: mode number.
 %       - ntype (optional): default is 0.
 %
 %   outputs
-%       - depthintPE: depth0integrated kinetic energy (in J/m^2).
+%       - depthintPE: time-averaged, depth-integrated
+%                     potential energy (in J/m^2).
 %
+% Compute time-averaged, depth-integrated Potential Energy from the
+% pressure modal amplitude.
+%
+% TO DO:
+%       - Include eta modal amplitude (or write a different function).
 %
 % case 0 - arbitrary N2
 % case 1 - cte N2 and modal shapes are unscaled sines and cosines.

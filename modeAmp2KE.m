@@ -17,7 +17,7 @@ function depthintKE = modeAmp2KE(uamp, vamp, H, ntype)
 % function of the phase difference between the components.
 %
 % When taking the depth integral, there is a constant factor that
-% multiplies the velocity squared that comes from the the integral
+% multiplies the velocity squared that comes from the integral
 % of the modal shapes. The type of normalization is specified by
 % the optional input "ntype". The avalable possibilities are:
 % 
