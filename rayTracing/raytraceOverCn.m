@@ -2,10 +2,10 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 % [xyRay] = RAYTRACEOVERCN(lon, lat, cn, xya0)
 %
 %   inputs
-%       - lon:
-%       - lat:
-%       - cn:
-%       - xya0:
+%       - lon: longitude vector of the domain.
+%       - lat: latitude    "    "   "     "
+%       - cn: eigenspeed.
+%       - xya0: 1x3 array with initial x/y positions and direction.
 %
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
