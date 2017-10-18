@@ -17,6 +17,9 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %
 % TRACE WITH TIME STEP????
 %
+% TO DO:
+%   - Could output more variables along the ray.
+%
 % Olavo Badaro Marques, 18/Oct/2017.
 
 
@@ -25,7 +28,7 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 wvfreq = 2*pi / (12.42*3600);
 
 %
-traceStep = 1;
+traceStep = 15;
 
 
 %%
@@ -87,12 +90,12 @@ cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ (latg(end, :) - latg(end-1, :));
 %%
 
 %
-cnpt = interp2(lon, lat, cn, xpt, ypt);
-cppt = cn2cpcg(cnpt, wvfreq, ypt);
-
-%
 xyNow = [xya0(1), xya0(2)];
 rayAng = xya0(3);
+
+%
+cnpt = interp2(lon, lat, cn, xyNow(1), xyNow(2));
+cppt = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
 
 %
 pxpyNow = [ cos(rayAng)/cppt, ...
@@ -129,6 +132,8 @@ for i = 1:nsteps
     % If current point is outside the domain, then break the loop
     if not((xyNow(1)>=lon(1) && xyNow(1)<=lon(end)) && ...
            (xyNow(2)>=lat(1) && xyNow(2)<=lat(end)))
+       
+        warning('Ray left the domain')
         break
     end
     
@@ -144,7 +149,7 @@ for i = 1:nsteps
     
     %
     cnpt = interp2(lon, lat, cn, xyNow(1), xyNow(2));
-    cppt = cn2cpcg(cnpt, wvfreq, xyNow(2));
+    cppt = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
     
     %
     fpt = interp2(lon, lat, f4ray, xyNow(1), xyNow(2));
@@ -152,15 +157,11 @@ for i = 1:nsteps
     %
     bpt = interp2(lon, lat, b4ray, xyNow(1), xyNow(2));
     
-    %
-    
     
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
     if abs(tan(rayAng)) <= 2
-        
-        pxpyNow(1) = cos(rayAng) / cppt;
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -170,11 +171,18 @@ for i = 1:nsteps
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
         
         %
-        pxpyNow(2) = pxpyNow(2) + ( dpydxNow * (traceStep .* cos(rayAng)));
+        pxpyNow(2) = pxpyNow(2) + ( dpydxNow * (traceStep .* cos(rayAng)) );
         
-        %
-        pxpyNow(1) = (1/cppt)^2 - pxpyNow(2)^2;
+        % Equivalent but different ways to do it!!!
+        pxpyNow(1) = sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
+% %         pxpyNow(1) = cos(rayAng) / cppt;
         
+        if i>=1
+            pxpyNow
+            keyboard
+        end
+
+
 	% For angles closer to MERIDIONAL
     else
         
@@ -191,19 +199,15 @@ for i = 1:nsteps
         
     end
     
-    
-    
-    
+
     %% --------------------------------------------------------------------
     
     % Update the ray angle
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
     
     
-    
-    
-    
-    
+    %%
+%     keyboard
 end
 
 
