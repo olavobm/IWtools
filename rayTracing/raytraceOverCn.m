@@ -15,7 +15,17 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %         BE CAREFUL WITH THE DEFINITION OF THE ANGLE THETA USED!!!!
 % ------------------------------------------------------------------------
 %
+% TRACE WITH TIME STEP????
+%
 % Olavo Badaro Marques, 18/Oct/2017.
+
+
+%%
+
+wvfreq = 2*pi / (12.42*3600);
+
+%
+traceStep = 1;
 
 
 %%
@@ -69,8 +79,132 @@ cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ (latg(end, :) - latg(end-1, :));
 
 %%
 
+% ------------------------------------------------------------
+% ------------------------------------------------------------
+% ------------------------------------------------------------
 
 
+%%
+
+%
+cnpt = interp2(lon, lat, cn, xpt, ypt);
+cppt = cn2cpcg(cnpt, wvfreq, ypt);
+
+%
+xyNow = [xya0(1), xya0(2)];
+rayAng = xya0(3);
+
+%
+pxpyNow = [ cos(rayAng)/cppt, ...
+            sin(rayAng)/cppt ];
+
+%
+nsteps = 5;
+
+xyRay = NaN(nsteps+1, 2);
+
+
+%
+xyRay(1, :) = xyNow;
+
+
+%%
+
+for i = 1:nsteps
+    
+    
+    %% --------------------------------------------------------------------
+    % Trace next point on the ray:
+    xyTrc(1) = xyNow(1) + (traceStep .* cos(rayAng));
+    xyTrc(2) = xyNow(2) + (traceStep .* sin(rayAng));
+       
+    xyNow = xyTrc;
+    
+    % Assign new coordinates to output variable
+    xyRay(i+1, :) = xyNow;
+    
+    
+    %% --------------------------------------------------------------------
+
+    % If current point is outside the domain, then break the loop
+    if not((xyNow(1)>=lon(1) && xyNow(1)<=lon(end)) && ...
+           (xyNow(2)>=lat(1) && xyNow(2)<=lat(end)))
+        break
+    end
+    
+    
+    %%
+    % ---------------------------------------------------------------------
+    % ---------------------------------------------------------------------
+    %     
+    % ---------------------------------------------------------------------
+    % ---------------------------------------------------------------------
+    
+    %% --------------------------------------------------------------------
+    
+    %
+    cnpt = interp2(lon, lat, cn, xyNow(1), xyNow(2));
+    cppt = cn2cpcg(cnpt, wvfreq, xyNow(2));
+    
+    %
+    fpt = interp2(lon, lat, f4ray, xyNow(1), xyNow(2));
+    
+    %
+    bpt = interp2(lon, lat, b4ray, xyNow(1), xyNow(2));
+    
+    %
+    
+    
+    %% --------------------------------------------------------------------
+    
+    % For angles closer to ZONAL
+    if abs(tan(rayAng)) <= 2
+        
+        pxpyNow(1) = cos(rayAng) / cppt;
+        
+        %
+        dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+        
+        % Equation (18) in Rainville's 2006
+        dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
+                     ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
+        
+        %
+        pxpyNow(2) = pxpyNow(2) + ( dpydxNow * (traceStep .* cos(rayAng)));
+        
+        %
+        pxpyNow(1) = (1/cppt)^2 - pxpyNow(2)^2;
+        
+	% For angles closer to MERIDIONAL
+    else
+        
+        error('NOT IMPLEMENTED!!!')
+        
+% %         %
+% %         pxpyNow(2) = sin(rayAng) / cppt;
+% %         
+% %         %
+% %         pxpyNow(1) = pxpyNow(1) + ( dpxdyNow * dy??????);
+% %         
+% %         %
+% %         pxpyNow(2) =
+        
+    end
+    
+    
+    
+    
+    %% --------------------------------------------------------------------
+    
+    % Update the ray angle
+    rayAng = atan2(pxpyNow(2), pxpyNow(1));
+    
+    
+    
+    
+    
+    
+end
 
 
 %%
@@ -79,7 +213,15 @@ cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ (latg(end, :) - latg(end-1, :));
 % ------------------------------------------------------------
 % ------------------------------------------------------------
 
-
+% % % ------------------------------------------------------------
+% % % function dpydx
+% % % 
+% % % end
+% % 
+% % % % ------------------------------------------------------------
+% % % function dpydx
+% % % 
+% % % end
 
 
 
