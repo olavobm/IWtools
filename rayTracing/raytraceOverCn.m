@@ -15,9 +15,11 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %         BE CAREFUL WITH THE DEFINITION OF THE ANGLE THETA USED!!!!
 % ------------------------------------------------------------------------
 %
-% TRACE WITH TIME STEP????
 %
 % TO DO:
+%   - Need to sort out how to write the calculations
+%     (and derivatives) on a sphere
+%   - Trace in time.
 %   - Could output more variables along the ray.
 %
 % Olavo Badaro Marques, 18/Oct/2017.
@@ -28,7 +30,12 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 wvfreq = 2*pi / (12.42*3600);
 
 %
-traceStep = 15;
+traceStep = 5;       
+% % traceStep = 10 * 111;
+
+%
+nsteps = 30;
+xyRay = NaN(nsteps+1, 2);
 
 
 %%
@@ -78,6 +85,9 @@ cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ (latg(end, :) - latg(end-1, :));
 % ------------------------------------------------------------
 %       CHECK THE SIGNS OF THE DERIVATIVES!!!!!
 % ------------------------------------------------------------
+% ------------------------------------------------------------
+%   NEED TO FIX THE UNITS OF THE DERIVATIVES OF CN
+% ------------------------------------------------------------
 
 
 %%
@@ -100,11 +110,6 @@ cppt = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
 %
 pxpyNow = [ cos(rayAng)/cppt, ...
             sin(rayAng)/cppt ];
-
-%
-nsteps = 5;
-
-xyRay = NaN(nsteps+1, 2);
 
 
 %
@@ -161,7 +166,7 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 2
+    if abs(tan(rayAng)) <= 1
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -171,31 +176,42 @@ for i = 1:nsteps
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
         
         %
-        pxpyNow(2) = pxpyNow(2) + ( dpydxNow * (traceStep .* cos(rayAng)) );
+        pxpyNow(2) = pxpyNow(2) + ( 111000 * dpydxNow * (traceStep .* cos(rayAng)) );
         
         % Equivalent but different ways to do it!!!
         pxpyNow(1) = sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
-% %         pxpyNow(1) = cos(rayAng) / cppt;
+% %         pxpyNow(1) = cos(rayAng) / cppt;	% I THINK THIS FORMAT IS POINTLESS
         
-        if i>=1
-            pxpyNow
-            keyboard
-        end
+        % --------------------------------------------------------------
+        % NEED TO FIX MAKE UNITS CONSISTENT WHEN UPDATING pxpyNow(2)
+        % --------------------------------------------------------------
+
+%         if i>=1
+%             pxpyNow
+%             keyboard
+%         end
 
 
 	% For angles closer to MERIDIONAL
     else
         
-        error('NOT IMPLEMENTED!!!')
+        %
+        dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
         
-% %         %
+        %
+        dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
+        
+        %
+        pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+
+        %
 % %         pxpyNow(2) = sin(rayAng) / cppt;
-% %         
-% %         %
-% %         pxpyNow(1) = pxpyNow(1) + ( dpxdyNow * dy??????);
-% %         
-% %         %
-% %         pxpyNow(2) =
+        
+        pxpyNow(2) = sqrt((1/cppt)^2 - pxpyNow(1)^2);
+        
+        if ~isreal(pxpyNow)
+            keyboard
+        end
         
     end
     
