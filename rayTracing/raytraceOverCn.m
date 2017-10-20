@@ -10,11 +10,10 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
 %
-%
-% ------------------------------------------------------------------------
-%         BE CAREFUL WITH THE DEFINITION OF THE ANGLE THETA USED!!!!
-% ------------------------------------------------------------------------
-%
+% RAYTRACEOVERCN a shallow-water wave ray over the eigenspeed field
+% "cn" specified at the rectangular grid defined by "lon" and "lat".
+% The initial position of the ray and its angle of propagation (in
+% radians) is given by xya0.
 %
 % TO DO:
 %   - Need to sort out how to write the calculations
@@ -30,11 +29,11 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 wvfreq = 2*pi / (12.42*3600);
 
 %
-traceStep = 5;       
+traceStep = 1;       
 % % traceStep = 10 * 111;
 
 %
-nsteps = 30;
+nsteps = 300;
 xyRay = NaN(nsteps+1, 2);
 
 
@@ -166,7 +165,7 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 1
+    if abs(tan(rayAng)) <= 30
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -176,7 +175,8 @@ for i = 1:nsteps
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
         
         %
-        pxpyNow(2) = pxpyNow(2) + ( 111000 * dpydxNow * (traceStep .* cos(rayAng)) );
+        pxpyNow(2) = pxpyNow(2) + ( (111000 * cos(fpt)) * dpydxNow * (traceStep .* cos(rayAng)) );
+%         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
         % Equivalent but different ways to do it!!!
         pxpyNow(1) = sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
@@ -207,7 +207,7 @@ for i = 1:nsteps
         %
 % %         pxpyNow(2) = sin(rayAng) / cppt;
         
-        pxpyNow(2) = sqrt((1/cppt)^2 - pxpyNow(1)^2);
+        pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
         
         if ~isreal(pxpyNow)
             keyboard
