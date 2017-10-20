@@ -10,10 +10,15 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
 %
-% RAYTRACEOVERCN a shallow-water wave ray over the eigenspeed field
-% "cn" specified at the rectangular grid defined by "lon" and "lat".
-% The initial position of the ray and its angle of propagation (in
-% radians) is given by xya0.
+% RAYTRACEOVERCN traces a shallow-water wave ray over the eigenspeed
+% field "cn" specified at the rectangular grid defined by "lon" and
+% "lat". The initial position of the ray and its angle of propagation
+% (in radians) is given by xya0.
+%
+% The WKB approximation is used to derive the ray tracing equations.
+% The traced ray may not be a realistic result if there are variations
+% of cn at scales much smaller than the wavelength. The theoretical
+% treatment can be found in Rainville and Pinkel (2006).
 %
 % TO DO:
 %   - Need to sort out how to write the calculations
