@@ -4,7 +4,7 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %   inputs
 %       - lon: longitude vector of the domain.
 %       - lat: latitude    "    "   "     "
-%       - cn: eigenspeed.
+%       - cn: eigenspeed field (for every lon/lat coordinate).
 %       - xya0: 1x3 array with initial x/y positions and direction.
 %
 %   outputs
@@ -21,8 +21,6 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 % treatment can be found in Rainville and Pinkel (2006).
 %
 % TO DO:
-%   - Need to sort out how to write the calculations
-%     (and derivatives) on a sphere
 %   - Trace in time.
 %   - Could output more variables along the ray.
 %
@@ -170,7 +168,7 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 30
+    if abs(tan(rayAng)) <= 2
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -180,7 +178,7 @@ for i = 1:nsteps
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
         
         %
-        pxpyNow(2) = pxpyNow(2) + ( (111000 * cos(fpt)) * dpydxNow * (traceStep .* cos(rayAng)) );
+        pxpyNow(2) = pxpyNow(2) + ( 111000 * dpydxNow * (traceStep .* cos(rayAng)) );
 %         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
         % Equivalent but different ways to do it!!!
