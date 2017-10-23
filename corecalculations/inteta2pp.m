@@ -49,8 +49,6 @@ if isvector(N2)
     
 end
 
-%% Create the boundary condition according to normal modes (N2)
-
 
 %% Compute the perturbation density multiplied
 % by the gravity acceleration:

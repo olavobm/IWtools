@@ -130,9 +130,11 @@ if ~isempty(cNanNoRep)
         lgood = ~isnan(rhopg(:, cNanNoRep(i)));
         zgood = z(lgood);
         intRho(lgood, cNanNoRep(i)) = cumtrapz(zgood, rhopg(lgood, cNanNoRep(i)));
-        
+        try
         Dzrange(i) = zgood(end)-zgood(1);
-        
+        catch
+            keyboard
+        end
         % Boundary condition:
         psurf(cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
         

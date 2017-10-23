@@ -6,8 +6,8 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 %       - lat: latitude    "    "   "     "
 %       - cn: eigenspeed field (for every lon/lat coordinate).
 %       - xya0: 1x3 array with initial x/y positions and direction.
-%       - dtN: 1x2 array
-%
+%       - dtN: 1x2 array with time resolution and
+%              total number of time steps.
 %
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
@@ -35,11 +35,12 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 wvfreq = 2*pi / (12.42*3600);
 
 %
-traceStep = 0.05;       
-% % traceStep = 10 * 111;
+dt = dtN(1);
+nsteps = dtN(2);
+
+nsteps = 5000;
 
 %
-nsteps = 3100;
 xyRay = NaN(nsteps+1, 2);
 
 
@@ -110,12 +111,11 @@ rayAng = xya0(3);
 
 %
 cnpt = interp2(lon, lat, cn, xyNow(1), xyNow(2));
-cppt = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
+[cppt, cgpt] = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
 
 %
 pxpyNow = [ cos(rayAng)/cppt, ...
             sin(rayAng)/cppt ];
-
 
 %
 xyRay(1, :) = xyNow;
@@ -123,8 +123,15 @@ xyRay(1, :) = xyNow;
 
 %%
 
+% % traceStep = cgpt * dt;
+
+%
+traceStep = 0.05;
+
+
+%%
+
 for i = 1:nsteps
-    
     
     %% --------------------------------------------------------------------
     % Trace next point on the ray:
@@ -165,13 +172,17 @@ for i = 1:nsteps
     
     %
     cnpt = interp2(lon, lat, cn, xyNow(1), xyNow(2));
-    cppt = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
+    [cppt, cgpt] = cn2cpcg(cnpt, wvfreq * 24*3600/(2*pi), xyNow(2));
     
     %
     fpt = interp2(lon, lat, f4ray, xyNow(1), xyNow(2));
     
     %
     bpt = interp2(lon, lat, b4ray, xyNow(1), xyNow(2));
+    
+    
+    %%
+% %     traceStep = cgpt * dt;
     
     
     %% --------------------------------------------------------------------
@@ -194,16 +205,6 @@ for i = 1:nsteps
         pxpyNow(1) = sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
 % %         pxpyNow(1) = cos(rayAng) / cppt;	% I THINK THIS FORMAT IS POINTLESS
         
-        % --------------------------------------------------------------
-        % NEED TO FIX MAKE UNITS CONSISTENT WHEN UPDATING pxpyNow(2)
-        % --------------------------------------------------------------
-
-%         if i>=1
-%             pxpyNow
-%             keyboard
-%         end
-
-
 	% For angles closer to MERIDIONAL
     else
         
@@ -231,8 +232,11 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % Update the ray angle
+    try
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
-    
+    catch
+        keyboard
+    end
     
     %%
 %     keyboard

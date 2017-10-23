@@ -2,15 +2,29 @@ function [xMode, xErr] = modalRecons(x, mdsAmp, vmodes)
 %
 %
 %   inputs:
-%
-%
-%
+%       - x:
+%       - mdsAmp:
+%       - vmodes:
 %
 %   outputs:
 %       - xModes:
 %       - xRes:
 %
 % Olavo Badaro Marques, 06/June/2017.
+
+% ------------------------------------------------------------------------
+% variance explained by the modes could be either in time or depth....
+% ------------------------------------------------------------------------
+
+
+%%
+
+% TO DO: should check if inputs sizes are consistent...
+
+
+%%
+
+% TO DO: extra input to subset the columns of vmodes...
 
 
 %% If there are NaNs, the calculation might be optimized in the
@@ -22,6 +36,7 @@ if any(isnan(x(:)))
      
     if length(colsets)==1
         ntypecols = 1;
+%         indcols = 1:size(x, 2);
     else
         ntypecols = size(x, 2);
     end
@@ -31,9 +46,60 @@ end
 
 %%
 
+xMode = NaN(size(x));
+
+
+%%
+
+% Constant factor which determines the confidence interval (CI)
+% associated with the error. 1.96 gives a 95% CI:
+facCI = 1.96;
+
+%
+for i = 1:ntypecols
+    
+    %%
+    
+    %
+    if ntypecols==1
+        indcols = 1:1:size(x, 2);
+    else
+        indcols = i;
+    end
+    
+    %
+    lok = ~isnan(vmodes(indcols(1), :));
+    
+    %
+    vmodesOK = vmodes(lok, :);
+    
+    xMode(:, indcols) =  * mdsAmp;
+    
+    
+    %%
+    
+    %
+    xErr.res = xMode - x;
+    xErr.MSE = mean(xErr.res.^2);
+
+    % Compute r2 (squared correlation coefficient):
+%     xErr.r2 = var(xMode) / var(xgd);   % which dimension?????
+
+    %
+    errorVar = (facCI^2) * xErr.MSE;
+    
+    auxGmodes = (vmodesOK' * vmodesOK) \ vmodesOK';
+    
+    %
+    xErr.mErr = errorVar .* diag(auxGmodes * auxGmodes');
+    xErr.mErr = sqrt(err.mErr);
+    
+    
+end
 
 
 
+%% -------------------------------------------------------
 
 end
 
@@ -42,41 +108,8 @@ end
 % --------------------------------------------------------
 % --------------------------------------------------------
 
-function [] = reconsModes(G, m)
+% function [] = reconsModes(G, m)
+% 
+% 
+% end
 
-
-end
-
-
-
-%%
-% function [mdsAmp, vmodes, xRes] = fitVmodes(z, x, vmodes, zmds)
-% -------------------------------------
-    % Compute the misfit and the mean-squared error (MSE):
-    fit4err = (Gmodes * m);
-    err.res = fit4err - xgd;
-    err.MSE = mean(err.res.^2);
-    
-    % Compute r2 (squared correlation coefficient):
-    err.r2 = var(fit4err) / var(xgd);
-    
-    % Constant factor which determines the confidence interval (CI)
-    % associated with the error. 1.96 gives a 95% CI. In fact, this
-    % constant is valid if the variable is normally distributed:
-    facCI = 1.96;
-    
-    % Use the MSE as the magnitude of data error variance. Define
-    % the error variance and the matrix that combines with the data
-    % error to give error estimates for the model parameters. Note
-    % that, in general, an error covariance matrix should be used instead
-    % of a scalar. But it is assumed the error is constant and
-    % uncorrelated at different locations, which greatly decreases the
-    % computational time:
-    errorVar = (facCI^2) * err.MSE;
-    aux_G4err = (G4err'*G4err) \ G4err';
-    
-    % Compute the error variance of the model parameters and take
-    % the square root to compute the error associated with the
-    % confidence interval set by facCI:
-    err.mErr = errorVar .* diag(aux_G4err * aux_G4err');
-    err.mErr = sqrt(err.mErr);
