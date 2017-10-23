@@ -1,4 +1,4 @@
-function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
+function [xyRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 % [xyRay] = RAYTRACEOVERCN(lon, lat, cn, xya0)
 %
 %   inputs
@@ -6,6 +6,8 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 %       - lat: latitude    "    "   "     "
 %       - cn: eigenspeed field (for every lon/lat coordinate).
 %       - xya0: 1x3 array with initial x/y positions and direction.
+%       - dtN: 1x2 array
+%
 %
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
@@ -16,9 +18,10 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 % (in radians) is given by xya0.
 %
 % The WKB approximation is used to derive the ray tracing equations.
-% The traced ray may not be a realistic result if there are variations
-% of cn at scales much smaller than the wavelength. The theoretical
-% treatment can be found in Rainville and Pinkel (2006).
+% The traced ray may not be a realistic result if there are significant
+% variations of cn at scales comparable or much smaller than the
+% wavelength. The theoretical treatment can be found in Rainville and
+% Pinkel (2006).
 %
 % TO DO:
 %   - Trace in time.
@@ -32,11 +35,11 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0)
 wvfreq = 2*pi / (12.42*3600);
 
 %
-traceStep = 1;       
+traceStep = 0.05;       
 % % traceStep = 10 * 111;
 
 %
-nsteps = 300;
+nsteps = 3100;
 xyRay = NaN(nsteps+1, 2);
 
 
@@ -127,7 +130,13 @@ for i = 1:nsteps
     % Trace next point on the ray:
     xyTrc(1) = xyNow(1) + (traceStep .* cos(rayAng));
     xyTrc(2) = xyNow(2) + (traceStep .* sin(rayAng));
-       
+    
+    [xyTrc(2), xyTrc(1)] = reckon(xyNow(2), xyNow(1), traceStep, 90 - (180*rayAng/pi));    
+     
+    %
+    xyTrc(1) = wrapPhase([0, 360], xyTrc(1));
+    
+    %
     xyNow = xyTrc;
     
     % Assign new coordinates to output variable
@@ -168,7 +177,7 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 2
+    if abs(tan(rayAng)) <= 10
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
