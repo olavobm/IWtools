@@ -31,7 +31,7 @@ freq = freq .* (2*pi/(24*3600));
 
 %% Compute phase speed and group velocity magnitude
 
-times_factor = freq/(sqrt(freq.^2 - f0.^2));
+times_factor = freq./(sqrt(freq.^2 - f0.^2));
 
 %
 cp = cn .* times_factor;

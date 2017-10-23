@@ -1,4 +1,4 @@
-function [xyRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
+function [xyRay, cnRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 % [xyRay] = RAYTRACEOVERCN(lon, lat, cn, xya0)
 %
 %   inputs
@@ -11,6 +11,7 @@ function [xyRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 %
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
+%       - cnRay: Nx1 array with eigenspeeds along the ray.
 %
 % RAYTRACEOVERCN traces a shallow-water wave ray over the eigenspeed
 % field "cn" specified at the rectangular grid defined by "lon" and
@@ -38,10 +39,9 @@ wvfreq = 2*pi / (12.42*3600);
 dt = dtN(1);
 nsteps = dtN(2);
 
-nsteps = 5000;
-
 %
 xyRay = NaN(nsteps+1, 2);
+cnRay = NaN(nsteps+1, 1);
 
 
 %%
@@ -119,14 +119,15 @@ pxpyNow = [ cos(rayAng)/cppt, ...
 
 %
 xyRay(1, :) = xyNow;
+cnRay(1) = cnpt;
 
 
 %%
 
-% % traceStep = cgpt * dt;
+traceStep = (cgpt * dt) / 111000;
 
 %
-traceStep = 0.05;
+% % traceStep = 0.05;
 
 
 %%
@@ -149,7 +150,7 @@ for i = 1:nsteps
     % Assign new coordinates to output variable
     xyRay(i+1, :) = xyNow;
     
-    
+% %     keyboard
     %% --------------------------------------------------------------------
 
     % If current point is outside the domain, then break the loop
@@ -180,15 +181,17 @@ for i = 1:nsteps
     %
     bpt = interp2(lon, lat, b4ray, xyNow(1), xyNow(2));
     
-    
+    %
+    cnRay(i+1) = cnpt;
+        
     %%
-% %     traceStep = cgpt * dt;
+	traceStep = (cgpt * dt) / 111000;
     
     
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 10
+    if abs(tan(rayAng)) <= 100
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -198,12 +201,15 @@ for i = 1:nsteps
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
         
         %
-        pxpyNow(2) = pxpyNow(2) + ( 111000 * dpydxNow * (traceStep .* cos(rayAng)) );
-%         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+%         pxpyNow(2) = pxpyNow(2) + ( (111000*cos(xyNow(2))) * dpydxNow * (traceStep .* cos(rayAng)) );
+        pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
         % Equivalent but different ways to do it!!!
         pxpyNow(1) = sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
-% %         pxpyNow(1) = cos(rayAng) / cppt;	% I THINK THIS FORMAT IS POINTLESS
+
+        if ~isreal(pxpyNow)
+            keyboard
+        end
         
 	% For angles closer to MERIDIONAL
     else
@@ -217,9 +223,7 @@ for i = 1:nsteps
         %
         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
 
-        %
-% %         pxpyNow(2) = sin(rayAng) / cppt;
-        
+        %        
         pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
         
         if ~isreal(pxpyNow)
@@ -232,11 +236,8 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % Update the ray angle
-    try
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
-    catch
-        keyboard
-    end
+
     
     %%
 %     keyboard
