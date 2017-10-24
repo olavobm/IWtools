@@ -70,29 +70,43 @@ f4ray = repmat(fvec(:), 1, length(lon));
 b4ray = repmat(betavec(:), 1, length(lon));
 
 
-%% Compute the derivative of the eigenspeed
+%% Compute the spatial derivatives of the eigenspeed field
 
 %
 cn_x = NaN(Nlat, Nlon);
 cn_y = NaN(Nlat, Nlon);
 
 %
-cn_x(:, 2:end-1) = (cn(:, 3:end) - cn(:, 1:end-2)) ./ (long(:, 3:end) - long(:, 1:end-2));
+dlon_1 = distance(latg(:, 1:end-2), long(:, 1:end-2), ...
+                  latg(:, 3:end), long(:, 3:end));
+dlon_2 = distance(latg(:, 1), long(:, 1), ...
+                  latg(:, 2), long(:, 2));
+dlon_3 = distance(latg(:, end-1), long(:, end-1), ...
+                  latg(:, end), long(:, end));
+              
+dlon_1 = 1000 * deg2km(dlon_1);
+dlon_2 = 1000 * deg2km(dlon_2);
+dlon_3 = 1000 * deg2km(dlon_3);
 
-cn_x(:, 1)   = (cn(:, 2) - cn(:, 1)) ./ (long(:, 2) - long(:, 1));
-cn_x(:, end) = (cn(:, end) - cn(:, end-1)) ./ (long(:, end) - long(:, end-1));
+cn_x(:, 2:end-1) = (cn(:, 3:end) - cn(:, 1:end-2)) ./ dlon_1;
+cn_x(:, 1)   = (cn(:, 2) - cn(:, 1)) ./ dlon_2;
+cn_x(:, end) = (cn(:, end) - cn(:, end-1)) ./ dlon_3;
 
 %
-cn_y(2:end-1, :) = (cn(3:end, :) - cn(1:end-2, :)) ./ (latg(3:end, :) - latg(1:end-2, :));
+dlat_1 = distance(latg(1:end-2, :), long(1:end-2, :), latg(3:end, :), long(3:end, :));
+dlat_2 = distance(latg(1, :), long(1, :), latg(2, :), long(2, :));
+dlat_3 = distance(latg(end-1, :), long(end-1, :), latg(end, :), long(end, :));
+              
+dlat_1 = 1000 * deg2km(dlat_1);
+dlat_2 = 1000 * deg2km(dlat_2);
+dlat_3 = 1000 * deg2km(dlat_3);
 
-cn_y(1, :)   = (cn(2, :) - cn(1, :)) ./ (latg(2, :) - latg(1, :));
-cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ (latg(end, :) - latg(end-1, :));
+cn_y(2:end-1, :) = (cn(3:end, :) - cn(1:end-2, :)) ./ dlat_1;
+cn_y(1, :)   = (cn(2, :) - cn(1, :)) ./ dlat_2;
+cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ dlat_3;
 
 % ------------------------------------------------------------
-%       CHECK THE SIGNS OF THE DERIVATIVES!!!!!
-% ------------------------------------------------------------
-% ------------------------------------------------------------
-%   NEED TO FIX THE UNITS OF THE DERIVATIVES OF CN
+%       CHECK THE SIGNS OF THE DERIVATIVES (probably right)
 % ------------------------------------------------------------
 
 
@@ -191,7 +205,11 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 100
+    if abs(tan(rayAng)) <= 2
+        
+%         if i>=51
+%             keyboard
+%         end
         
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
@@ -207,18 +225,21 @@ for i = 1:nsteps
         %
         pxpyNow(1) = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
 
-        if ~isreal(pxpyNow)
-            keyboard
-        end
+% %         if ~isreal(pxpyNow)
+% %             keyboard
+% %         end
         
 	% For angles closer to MERIDIONAL
     else
         
+% %         keyboard
+        
         %
         dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
         
-        %
-        dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
+        % Two expressions are (should be) equivalent
+% %         dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
+        dpxdyNow = - (pxpyNow(1)^2 + pxpyNow(2)^2) * (1/(cnpt*pxpyNow(2))) * dcndx;
         
         %
         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
@@ -226,9 +247,11 @@ for i = 1:nsteps
         %        
         pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
         
-        if ~isreal(pxpyNow)
-            keyboard
-        end
+% %         keyboard
+        
+% %         if ~isreal(pxpyNow)
+% %             keyboard
+% %         end
         
     end
     
