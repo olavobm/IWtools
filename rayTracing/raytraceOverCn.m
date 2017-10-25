@@ -140,9 +140,6 @@ cnRay(1) = cnpt;
 
 traceStep = (cgpt * dt) / 111000;
 
-%
-% % traceStep = 0.05;
-
 
 %%
 
@@ -164,7 +161,7 @@ for i = 1:nsteps
     % Assign new coordinates to output variable
     xyRay(i+1, :) = xyNow;
     
-% %     keyboard
+
     %% --------------------------------------------------------------------
 
     % If current point is outside the domain, then break the loop
@@ -232,8 +229,6 @@ for i = 1:nsteps
 	% For angles closer to MERIDIONAL
     else
         
-% %         keyboard
-        
         %
         dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
         
@@ -246,8 +241,7 @@ for i = 1:nsteps
 
         %        
         pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
-        
-% %         keyboard
+
         
 % %         if ~isreal(pxpyNow)
 % %             keyboard
@@ -261,27 +255,6 @@ for i = 1:nsteps
     % Update the ray angle
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
 
-    
-    %%
-%     keyboard
 end
-
-
-%%
-
-% ------------------------------------------------------------
-% ------------------------------------------------------------
-% ------------------------------------------------------------
-
-% % % ------------------------------------------------------------
-% % % function dpydx
-% % % 
-% % % end
-% % 
-% % % % ------------------------------------------------------------
-% % % function dpydx
-% % % 
-% % % end
-
 
 
