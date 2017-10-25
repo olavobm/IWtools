@@ -1,5 +1,5 @@
 function [xyRay, cnRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
-% [xyRay] = RAYTRACEOVERCN(lon, lat, cn, xya0)
+% [xyRay, cnRay] = RAYTRACEOVERCN(lon, lat, cn, xya0, dtN)
 %
 %   inputs
 %       - lon: longitude vector of the domain.
