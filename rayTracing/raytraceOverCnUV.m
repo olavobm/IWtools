@@ -1,11 +1,12 @@
-function [xyRay, cnRay] = raytraceOverCnUV(lon, lat, cn, UV, xya0, dtN)
-% [xyRay, cnRay] = RAYTRACEOVERCNUV(lon, lat, cn, UV, xya0, dtN)
+function [xyRay, cnRay] = raytraceOverCnUV(lon, lat, cn, U, V, xya0, dtN)
+% [xyRay, cnRay] = RAYTRACEOVERCNUV(lon, lat, cn, U, V, xya0, dtN)
 %
 %   inputs
 %       - lon: longitude vector of the domain.
 %       - lat: latitude    "    "   "     "
 %       - cn: eigenspeed field (for every lon/lat coordinate).
-%       - UV:
+%       - U:
+%       - V:
 %       - xya0: 1x3 array with initial x/y positions and direction.
 %       - dtN: 1x2 array with time resolution and
 %              total number of time steps.
@@ -92,9 +93,32 @@ cn_y(2:end-1, :) = (cn(3:end, :) - cn(1:end-2, :)) ./ dlat_1;
 cn_y(1, :)   = (cn(2, :) - cn(1, :)) ./ dlat_2;
 cn_y(end, :) = (cn(end, :) - cn(end-1, :)) ./ dlat_3;
 
-% ------------------------------------------------------------
-%       CHECK THE SIGNS OF THE DERIVATIVES (probably right)
-% ------------------------------------------------------------
+
+%% Compute the spatial derivatives of the velocity field
+
+%
+U_x = NaN(Nlat, Nlon);
+U_y = NaN(Nlat, Nlon);
+V_x = NaN(Nlat, Nlon);
+V_y = NaN(Nlat, Nlon);
+
+% Spatial derivatives of U
+U_x(:, 2:end-1) = (U(:, 3:end) - U(:, 1:end-2)) ./ dlon_1;
+U_x(:, 1)   = (U(:, 2) - U(:, 1)) ./ dlon_2;
+U_x(:, end) = (U(:, end) - U(:, end-1)) ./ dlon_3;
+
+U_y(2:end-1, :) = (U(3:end, :) - U(1:end-2, :)) ./ dlat_1;
+U_y(1, :)   = (U(2, :) - U(1, :)) ./ dlat_2;
+U_y(end, :) = (U(end, :) - U(end-1, :)) ./ dlat_3;
+
+% Spatial derivatives of V
+V_x(:, 2:end-1) = (V(:, 3:end) - V(:, 1:end-2)) ./ dlon_1;
+V_x(:, 1)   = (V(:, 2) - V(:, 1)) ./ dlon_2;
+V_x(:, end) = (V(:, end) - V(:, end-1)) ./ dlon_3;
+
+V_y(2:end-1, :) = (V(3:end, :) - V(1:end-2, :)) ./ dlat_1;
+V_y(1, :)   = (V(2, :) - V(1, :)) ./ dlat_2;
+V_y(end, :) = (V(end, :) - V(end-1, :)) ./ dlat_3;
 
 
 %%
@@ -180,8 +204,13 @@ for i = 1:nsteps
     bpt = interp2(lon, lat, b4ray, xyNow(1), xyNow(2));
     
     %
+    Upt = interp2(lon, lat, U, xyNow(1), xyNow(2));
+    Vpt = interp2(lon, lat, V, xyNow(1), xyNow(2));
+    
+    %
     cnRay(i+1) = cnpt;
         
+    
     %%
 	traceStep = (cgpt * dt) / 111000;
     
@@ -191,24 +220,34 @@ for i = 1:nsteps
     % For angles closer to ZONAL
     if abs(tan(rayAng)) <= 2
         
-%         if i>=51
-%             keyboard
-%         end
-        
         %
         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+        dUdy = interp2(lon, lat, U_y, xyNow(1), xyNow(2));
+        dVdy = interp2(lon, lat, V_y, xyNow(1), xyNow(2));
         
-        % Equation (18) in Rainville's 2006
-        dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
-                     ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
+        % Equation (28) in RP 2006
+        dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndy + ...
+                        - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdy + ...
+                        - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdy + ...
+                        (2*fpt/(wvfreq^2))*bpt;
         
         %
-%         pxpyNow(2) = pxpyNow(2) + ( (111000*cos(xyNow(2))) * dpydxNow * (traceStep .* cos(rayAng)) );
+        dldx = 2*(cnpt^2 - Upt^2)*pxpyNow(1) + 2*Upt - 2*Upt*Vpt*pxpyNow(2);
+        dldx = 1/dldx;
+        
+        % Equation (27)
+        dpydxNow = - dHdy * dldx;
+        
+        %
         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
         %
-        pxpyNow(1) = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
+%         pxpyNow(1) = sign(cos(rayAng)) 
+        
+        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2));
 
+        keyboard
+        
 % %         if ~isreal(pxpyNow)
 % %             keyboard
 % %         end
@@ -218,16 +257,26 @@ for i = 1:nsteps
         
         %
         dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
+        dUdx = interp2(lon, lat, U_x, xyNow(1), xyNow(2));
+        dVdx = interp2(lon, lat, V_x, xyNow(1), xyNow(2));
         
-        % Two expressions are (should be) equivalent
-% %         dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
-        dpxdyNow = - (pxpyNow(1)^2 + pxpyNow(2)^2) * (1/(cnpt*pxpyNow(2))) * dcndx;
+        %
+        dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndx + ...
+                        - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdx + ...
+                        - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdx;
+        
+        %
+        dldy = 2*(cnpt^2 - Vpt^2)*pxpyNow(2) + 2*Vpt - 2*Upt*Vpt*pxpyNow(1);
+        dldy = 1/dldy;
+        
+        %
+        dpxdyNow = - dHdy * dldy;
         
         %
         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
 
         %        
-        pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
+        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1));
 
         
 % %         if ~isreal(pxpyNow)
@@ -243,5 +292,34 @@ for i = 1:nsteps
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
 
 end
+
+
+end
+
+%%
+
+function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1)
+
+    %
+    a = cnpt^2 - u1^2;
+
+    b = 2 * u1 * (1 - u2*p1);
+
+    c = (cnpt^2 - u2^2)*p1^2 + 2*u2*p1 - 1 + (fpt/wvfreq)^2;
+    
+    %
+    p2_1 = (- b - sqrt(b^2 - 4*a*c)) / 2*a;
+    p2_2 = (- b + sqrt(b^2 - 4*a*c)) / 2*a;
+    
+    %
+    
+    p2 = p2_1;
+end
+
+
+
+
+
+
 
 
