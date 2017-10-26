@@ -237,17 +237,13 @@ for i = 1:nsteps
         
         % Equation (27)
         dpydxNow = - dHdy * dldx;
-        
+
         %
         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
         %
-%         pxpyNow(1) = sign(cos(rayAng)) 
-        
-        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2));
+        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)));
 
-        keyboard
-        
 % %         if ~isreal(pxpyNow)
 % %             keyboard
 % %         end
@@ -276,7 +272,7 @@ for i = 1:nsteps
         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
 
         %        
-        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1));
+        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)));
 
         
 % %         if ~isreal(pxpyNow)
@@ -298,22 +294,25 @@ end
 
 %%
 
-function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1)
+function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1, signP2)
 
     %
     a = cnpt^2 - u1^2;
 
     b = 2 * u1 * (1 - u2*p1);
 
-    c = (cnpt^2 - u2^2)*p1^2 + 2*u2*p1 - 1 + (fpt/wvfreq)^2;
+    c = ((cnpt^2 - u2^2)*p1^2) + (2*u2*p1) - 1 + (fpt/wvfreq)^2;
     
     %
-    p2_1 = (- b - sqrt(b^2 - 4*a*c)) / 2*a;
-    p2_2 = (- b + sqrt(b^2 - 4*a*c)) / 2*a;
-    
+    p2_1 = (- b - sqrt(b^2 - 4*a*c)) / (2*a);
+    p2_2 = (- b + sqrt(b^2 - 4*a*c)) / (2*a);
+
     %
-    
-    p2 = p2_1;
+    if sign(p2_1)==signP2
+        p2 = p2_1;
+    else
+        p2 = p2_2;
+    end
 end
 
 
