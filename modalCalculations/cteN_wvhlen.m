@@ -1,19 +1,29 @@
-function wvhlen = cteN_wvhlen(freq, N, f, D, nmd)
-% wvhlen = CTEN_WVHLEN(freq, N, f, D, nmd)
+function wvhlen = cteN_wvhlen(wvfreq, N, lat0, D, nmd)
+% wvhlen = CTEN_WVHLEN(wvfreq, N, f, D, nmd)
 %
-%   inputs:
-%       - freq: wave frequency.
+%   inputs
+%       - wvfreq: wave frequency (in cycles per day).
 %       - N: buoyancy frequency.
-%       - f: Coriolis parameter.
-%       - D: fluid depth.
+%       - lat0: latitude (in degrees).
+%       - D: water depth.
 %       - nmd: mode number.
 %
-%   outputs:
+%   outputs
 %       - wvhlen: horizontal wavelength (in meters).
 %
 %
 %
 % Olavo Badaro Marques, 28/Jun/2017.
+
+
+%% Convert from cycles per day to radians per second
+
+wvfreq = wvfreq * 2*pi / (24*3600);
+
+
+%% Compute Coriolis parameter
+
+f0 = gsw_f(lat0);
 
 
 %% Quantized vertical wavenumber:
@@ -23,7 +33,7 @@ m_wvnmbr = nmd * pi / D;
 
 %% Ratio of vertical with the horizontal wavenumber:
 
-ratioWvNmbrs = sqrt((N.^2 - freq.^2) ./ (freq.^2 - f.^2));
+ratioWvNmbrs = sqrt((N.^2 - wvfreq.^2) ./ (wvfreq.^2 - f0.^2));
 
 
 %% Horizontal wavenumber magnitude:
