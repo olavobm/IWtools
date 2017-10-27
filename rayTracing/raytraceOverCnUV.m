@@ -1,4 +1,4 @@
-function [xyRay, cnRay] = raytraceOverCnUV(lon, lat, cn, U, V, xya0, dtN)
+function [xyRay, cnRay, angRay] = raytraceOverCnUV(lon, lat, cn, U, V, xya0, dtN)
 % [xyRay, cnRay] = RAYTRACEOVERCNUV(lon, lat, cn, U, V, xya0, dtN)
 %
 %   inputs
@@ -14,7 +14,7 @@ function [xyRay, cnRay] = raytraceOverCnUV(lon, lat, cn, U, V, xya0, dtN)
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
 %       - cnRay: Nx1 array with eigenspeeds along the ray.
-%
+%       - angRay:
 %
 % Olavo Badaro Marques, 25/Oct/2017.
 
@@ -145,6 +145,7 @@ pxpyNow = [ cos(rayAng)/cppt, ...
 %
 xyRay(1, :) = xyNow;
 cnRay(1) = cnpt;
+angRay(1) = rayAng;
 
 
 %%
@@ -171,8 +172,9 @@ for i = 1:nsteps
     
     % Assign new coordinates to output variable
     xyRay(i+1, :) = xyNow;
-    
+    angRay(i+1) = rayAng;
 
+    
     %% --------------------------------------------------------------------
 
     % If current point is outside the domain, then break the loop
@@ -212,6 +214,17 @@ for i = 1:nsteps
         
     
     %%
+    
+% %     % I think I should do this
+% %     cgx = (pxpyNow(1)*(cnpt^2 - Upt^2) + wvfreq*Upt - Upt*Vpt*pxpyNow(2)) / ...
+% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
+% %                 
+% % 	cgy = (pxpyNow(2)*(cnpt^2 - Vpt^2) + wvfreq*Vpt - Upt*Vpt*pxpyNow(1)) / ...
+% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
+% %                 
+% % 	cgpt = sqrt(cgx^2 + cgy^2);
+    
+    %
 	traceStep = (cgpt * dt) / 111000;
     
     
@@ -241,12 +254,20 @@ for i = 1:nsteps
         %
         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
         
-        %
-        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)));
-
-% %         if ~isreal(pxpyNow)
+% %         if i>804
 % %             keyboard
 % %         end
+        
+        %
+        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)), pxpyNow(1), i);
+
+% %         if i>804
+% %             keyboard
+% %         end
+        
+        if ~isreal(pxpyNow)
+            keyboard
+        end
         
 	% For angles closer to MERIDIONAL
     else
@@ -272,21 +293,41 @@ for i = 1:nsteps
         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
 
         %        
-        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)));
+        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)), pxpyNow(2), i);
 
         
-% %         if ~isreal(pxpyNow)
-% %             keyboard
-% %         end
+        if ~isreal(pxpyNow)
+            keyboard
+        end
         
     end
     
+% %     if i>804
+% %         keyboard
+% %     end
 
     %% --------------------------------------------------------------------
     
-    % Update the ray angle
-    rayAng = atan2(pxpyNow(2), pxpyNow(1));
+% %     % As I understand the ratio cgy/cgx should be the equal to dy/dx.
+% %     % But then I get different results.
+% %     cgx = (pxpyNow(1)*(cnpt^2 - Upt^2) + wvfreq*Upt - Upt*Vpt*pxpyNow(2)) / ...
+% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
+% %                 
+% % 	cgy = (pxpyNow(2)*(cnpt^2 - Vpt^2) + wvfreq*Vpt - Upt*Vpt*pxpyNow(1)) / ...
+% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
 
+    %
+    dy = 2 * ((cnpt^2 - Vpt^2)*pxpyNow(2) + Vpt - Upt*Vpt*pxpyNow(1));
+    dx = 2 * ((cnpt^2 - Upt^2)*pxpyNow(1) + Upt - Upt*Vpt*pxpyNow(2));
+
+	% Update the ray angle
+    rayAng = atan2(dy, dx);
+    
+% % %     % Update the ray angle - THIS IS NOT TRUE FOR THE CASE WITH CURRENTS!!!
+% % %     % (EQUATIONS 30, 31 IN RP2006)
+% % %     rayAng = atan2(pxpyNow(2), pxpyNow(1));
+
+    
 end
 
 
@@ -294,7 +335,7 @@ end
 
 %%
 
-function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1, signP2)
+function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1, signP2, p2i, i)
 
     %
     a = cnpt^2 - u1^2;
@@ -307,12 +348,24 @@ function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1, signP2)
     p2_1 = (- b - sqrt(b^2 - 4*a*c)) / (2*a);
     p2_2 = (- b + sqrt(b^2 - 4*a*c)) / (2*a);
 
+% %     if i>=825
+% %         keyboard
+% %     end
+% %     
     %
     if sign(p2_1)==signP2
         p2 = p2_1;
     else
         p2 = p2_2;
     end
+
+% %     %
+% %     if abs(p2_1 - p2i) < abs(p2_2 - p2i)
+% %         p2 = p2_1;
+% %     else
+% %         p2 = p2_2;
+% %     end
+
 end
 
 
