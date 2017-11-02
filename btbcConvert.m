@@ -1,5 +1,5 @@
-function C = btbcConvert(gradD, ubt, vbt, pp)
-% C = BTBCCONVERT(gradD, ubt, vbt, pp)
+function C = btbcConversion(gradD, ubt, vbt, pp)
+% C = BTBCCONVERSION(gradD, ubt, vbt, pp)
 %
 %   inputs
 %       - gradD:
