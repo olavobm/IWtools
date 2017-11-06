@@ -2,7 +2,8 @@ function etabt = bt2eta(U, s, D, z, tfreq, ti)
 % etabt = BT2ETA(U, s, D, z)
 %
 %   inputs
-%       - U: barotropic velocity perpendicular to the bathymetry.
+%       - U: upslope barotropic velocity (parallel
+%            to the bathymetry gradient).
 %       - s: (tangent) of the bottom slope.
 %       - D: water depth.
 %       - z: depth points to compute the calculation
@@ -13,6 +14,9 @@ function etabt = bt2eta(U, s, D, z, tfreq, ti)
 %       - etabt: isopycnal displacement due to barotropic
 %                flow over a 1D linear slope.
 %
+%
+%   TO DO:
+%       - Check calculcation with complex numbers.
 %
 % Olavo Badaro Marques, 06/Nov/2017.
 
@@ -25,7 +29,7 @@ if exist('ti', 'var')
     
 else
    
-    coefaux = U/tfreq;
+    coefaux = U/tfreq * exp(-1i.*pi/2);
     
 end
 
