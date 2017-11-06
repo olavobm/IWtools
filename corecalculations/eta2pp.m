@@ -1,7 +1,7 @@
 function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
-%% [pp, psurf] = ETA2PP(z, eta, N2, rho0)
+%% [pp, psurf] = ETA2PP(z, eta, N2, zN2, rho0)
 %
-%  inputs:
+%  inputs
 %    - z: vector of the data points depths in meters. Depth is greater
 %         than 0 and should be specified in ascending order.
 %    - eta: vector or matrix of the isopycnal displacement.
@@ -11,17 +11,21 @@ function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
 %                      assumes N2 is given at the same depth as eta.
 %    - rho0 (optional): reference potential density (default is 1025).
 %
-%  outputs:
+%  outputs
 %    - pp: pressure perturbartion.
 %    - psurf: baroclinic surface pressure.
 %
 % ETA2PP computes the pressure perturbation profile due to hydrostatic
 % internal wave (hydrostatic valid when wavefrequency^2 << N^2).
 % The calculation assumes the depth integral of pp is zero.
-% Is it possible/relevant to use different boundary conditions ?????
 %
 % The calculation is equation (1) from Kunze et al. (2002): Internal
 % Waves in Monterey Submarine Canyon.
+%
+% TO DO:
+%   - Fix size/dimensions of inputs/outputs
+%   - Use different boundary conditions???
+%   - Clean the code.
 %
 % Olavo Badaro Marques, 27/Oct/2016.
 
