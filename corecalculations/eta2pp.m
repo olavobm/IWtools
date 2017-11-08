@@ -117,13 +117,15 @@ if ~isempty(cGoodData)
     % Boundary condition:
     psurf(cGoodData) = pptop(cGoodData) - (1/Dzrange) .* trapz(z, intRho(:, cGoodData));
     
-    % Make psurf to add it to intRho:
+    % Turn psurf into a matrix to add to intRho:
 	psurf = repmat(psurf, size(rhopg, 1), 1);
     
+    
     % Compute the pressure perturbation
-    pp(:, cGoodData) = psurf + intRho(:, cGoodData);
+    pp(:, cGoodData) = psurf(:, cGoodData) + intRho(:, cGoodData);
+    
 end
-
+% % keyboard
 % ---------------
 if ~isempty(cNanNoRep)
     
@@ -140,13 +142,13 @@ if ~isempty(cNanNoRep)
             keyboard
         end
         % Boundary condition:
-        psurf(cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
+        psurf(1, cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
         
         % NEED TO DEAL WITH NANS PROPERLY!!!!
         
         % Compute the pressure perturbation (no need to use repmat
         % since we are dealing with profiles individually):
-        pp(lgood, cNanNoRep(i)) = psurf(cNanNoRep(i)) + intRho(lgood, cNanNoRep(i));
+        pp(lgood, cNanNoRep(i)) = psurf(1, cNanNoRep(i)) + intRho(lgood, cNanNoRep(i));
         
     end
     
