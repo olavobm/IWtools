@@ -78,10 +78,7 @@ end
 rhopg = rho0 .* eta .* N2;
 
 
-%% .........
-
-% Cumulatively integrate the perturbation density:
-% and the boundary condition:
+%% 
 
 % Pressure perturbation (IMPROVE FOR UPPER NaNs!!!):
 pptop = zeros(1, size(rhopg, 2));
@@ -89,13 +86,7 @@ pptop = zeros(1, size(rhopg, 2));
 pp = NaN(size(rhopg));
 psurf = NaN(1, size(rhopg, 2));
 
-
-% -------------------------------------------------------------------------
-% ACTUALLY, IT IS BETTER TO DO THE PROFILE OPTIMIZATION THING, AFTERALL
-% IF THERE ARE NO NANS, ALL PROFILES WILL GO ON THE SET WHERE WE CAN DO
-% RIGHT AWAY AND THE OTHER SET WILL BE EMPTY.
-
-
+%
 ncols = size(rhopg, 2);
 allcols = 1:ncols;
 allcols = allcols';  % make it column vector
@@ -106,9 +97,12 @@ cNanNoRep = unique(cnan);
 
 cGoodData = setdiff(allcols, cNanNoRep);
 
-% ---------------
+
+%% Cumulatively integrate the density perturbation:
+
 intRho = NaN(size(rhopg));
 
+% Deal with all profiles that do not have NaNs
 if ~isempty(cGoodData)
     intRho(:, cGoodData) = cumtrapz(z, rhopg(:, cGoodData));
     
@@ -125,8 +119,8 @@ if ~isempty(cGoodData)
     pp(:, cGoodData) = psurf(:, cGoodData) + intRho(:, cGoodData);
     
 end
-% % keyboard
-% ---------------
+
+% For the profiles that have NaNs, do one by one
 if ~isempty(cNanNoRep)
     
     Dzrange = NaN(1, size(rhopg(:, cNanNoRep), 2));
