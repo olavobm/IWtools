@@ -1,5 +1,5 @@
-function [mdsAmp, vmodes] = fitVmodes(z, x, vmodes, zmds)
-% [mdsAmp, vmodes, xRes] = FITVMODES(z, x, vmodes, zmds)
+function [mdsAmp, vmodes, xRes, merror] = fitVmodes(z, x, vmodes, zmds, xerror)
+% [mdsAmp, vmodes, xRes, merror] = FITVMODES(z, x, vmodes, zmds, xerror)
 % 
 %  inputs:
 %    - z: depth grid vector associated with the data x.
@@ -7,6 +7,7 @@ function [mdsAmp, vmodes] = fitVmodes(z, x, vmodes, zmds)
 %    - vmodes: matrix whose columns are normal modes.
 %    - zmds (optional): depth grid vector associated with the vertical
 %                       modes, in case it is different than the data x.
+%    - xerror (optional):
 %
 %  outputs:
 %    - mdsAmp: modal amplitudes array. One row for each mode (or
@@ -38,7 +39,7 @@ end
 % modes. If not, assumes it is the same as the data, but
 % they must have the same number of rows:
 
-if ~exist('zmds', 'var')
+if ~exist('zmds', 'var') || isempty(zmds)
     
     if size(vmodes, 1) == size(x, 1)
         zmds = z;
@@ -74,7 +75,19 @@ if ~isequal(z, zmds)
     vmodes = vmodesinterp;
     
 end
-    
+   
+
+%%
+
+if exist('xerror', 'var')
+    merror = NaN(nmds, n);
+    lerror = true;
+else
+    lerror = false;
+end
+
+xRes = NaN(size(x, 1), n);
+
 
 %% Do the modal fit:
 
@@ -98,10 +111,24 @@ for i = 1:n
     % Project the ith column of x onto the normal modes:
     Gmodes = vmodes(lgood,  :);
     
-    m = (Gmodes' * Gmodes) \ (Gmodes' * x(lgood, i));
+    %
+    Gaux = (Gmodes' * Gmodes) \ (Gmodes');
+    
+    %
+    m = Gaux * x(lgood, i);
     
     % Assign m to ith column of mdsAmp:
     mdsAmp(:, i) = m;
+    
+    %
+    xRes(lgood, i) = (Gmodes * m) - x(lgood, i);
+    
+    %
+    if lerror
+        mCovmatrix = Gaux * (xerror .* eye(ngood)) * Gaux';
+        merror(:, i) = diag(mCovmatrix);
+    end
+
     
 end
 
