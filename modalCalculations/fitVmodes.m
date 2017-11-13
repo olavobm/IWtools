@@ -1,5 +1,5 @@
-function [mdsAmp, vmodes, xRes, merror] = fitVmodes(z, x, vmodes, zmds, xerror)
-% [mdsAmp, vmodes, xRes, merror] = FITVMODES(z, x, vmodes, zmds, xerror)
+function [mdsAmp, vmodes, fiterr] = fitVmodes(z, x, vmodes, zmds, xerror)
+% [mdsAmp, vmodes, fiterr] = FITVMODES(z, x, vmodes, zmds, xerror)
 % 
 %  inputs:
 %    - z: depth grid vector associated with the data x.
@@ -14,7 +14,11 @@ function [mdsAmp, vmodes, xRes, merror] = fitVmodes(z, x, vmodes, zmds, xerror)
 %              column of vmodes) and one column for each of x.
 %    - vmodes: return the matrix of vertical modes, which is useful if the
 %              vmodes input is not in the same z grid as the data.
-%    - xRes: residual of the fit (STILL NOT IMPLEMENTED!)
+%    - fiterr: struct variable containing quantities associated with
+%              the goodness of the fit. Its fields are:
+%                   * xRes: residual of the fit
+%                   * R2:
+%                   * merror:
 %
 % Function FITVMODES project the data x onto the normal modes specified
 % by vmodes(i.e. each column of vmodes input represents a mode).
@@ -122,6 +126,10 @@ for i = 1:n
     
     %
     xRes(lgood, i) = (Gmodes * m) - x(lgood, i);
+    
+    %
+    fitR2 = 1 - (sum(xRes(lgood, i).^2) ./ ...
+                 sum((x(lgood, i) - mean(x(lgood, i))).^2));
     
     %
     if lerror
