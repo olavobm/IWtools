@@ -91,6 +91,7 @@ else
 end
 
 xRes = NaN(size(x, 1), n);
+fitR2 = NaN(1, n);
 
 
 %% Do the modal fit:
@@ -128,18 +129,25 @@ for i = 1:n
     xRes(lgood, i) = (Gmodes * m) - x(lgood, i);
     
     %
-    fitR2 = 1 - (sum(xRes(lgood, i).^2) ./ ...
-                 sum((x(lgood, i) - mean(x(lgood, i))).^2));
+    fitR2(i) = 1 - (sum(xRes(lgood, i).^2) ./ ...
+                    sum((x(lgood, i) - mean(x(lgood, i))).^2));
     
-    %
+    % One could also use the misfit to calculate the error of the entire
+    % fit (I'm not sure if that would work mode by mode)
     if lerror
         mCovmatrix = Gaux * (xerror .* eye(ngood)) * Gaux';
+        keyboard
         merror(:, i) = diag(mCovmatrix);
     end
 
     
 end
 
-
+%
+fiterr.misfit = xRes;
+fiterr.R2 = fitR2;
+if lerror
+    fiterr.merror = merror;
+end
 
 
