@@ -135,9 +135,8 @@ for i = 1:n
     % One could also use the misfit to calculate the error of the entire
     % fit (I'm not sure if that would work mode by mode)
     if lerror
-        mCovmatrix = Gaux * (xerror .* eye(ngood)) * Gaux';
-        keyboard
-        merror(:, i) = diag(mCovmatrix);
+        mCovmatrix = Gaux * ((xerror.^2) .* eye(ngood)) * Gaux';
+        merror(:, i) = sqrt(diag(mCovmatrix));
     end
 
     
