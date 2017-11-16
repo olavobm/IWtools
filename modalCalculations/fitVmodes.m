@@ -1,24 +1,24 @@
 function [mdsAmp, vmodes, fiterr] = fitVmodes(z, x, vmodes, zmds, xerror)
 % [mdsAmp, vmodes, fiterr] = FITVMODES(z, x, vmodes, zmds, xerror)
 % 
-%  inputs:
-%    - z: depth grid vector associated with the data x.
-%    - x: data whose columns are projected onto normal modes.
-%    - vmodes: matrix whose columns are normal modes.
-%    - zmds (optional): depth grid vector associated with the vertical
-%                       modes, in case it is different than the data x.
-%    - xerror (optional):
+%   inputs
+%       - z: depth grid vector associated with the data x.
+%       - x: data whose columns are projected onto normal modes.
+%       - vmodes: matrix whose columns are normal modes.
+%       - zmds (optional): depth grid vector associated with the vertical
+%                          modes, in case it is different than the data x.
+%       - xerror (optional):
 %
-%  outputs:
-%    - mdsAmp: modal amplitudes array. One row for each mode (or
-%              column of vmodes) and one column for each of x.
-%    - vmodes: return the matrix of vertical modes, which is useful if the
-%              vmodes input is not in the same z grid as the data.
-%    - fiterr: struct variable containing quantities associated with
-%              the goodness of the fit. Its fields are:
+%   outputs
+%       - mdsAmp: modal amplitudes array. One row for each mode (or
+%                 column of vmodes) and one column for each of x.
+%       - vmodes: return the matrix of vertical modes, which is useful if
+%                 the vmodes input is not in the same z grid as the data.
+%       - fiterr: struct variable containing quantities associated with
+%                 the goodness of the fit. Its fields are:
 %                   * xRes: residual of the fit
-%                   * R2:
-%                   * merror:
+%                   * R2: variance explained by the fit.
+%                   * merror: error on each model parameter.
 %
 % Function FITVMODES project the data x onto the normal modes specified
 % by vmodes(i.e. each column of vmodes input represents a mode).
@@ -135,6 +135,11 @@ for i = 1:n
     % One could also use the misfit to calculate the error of the entire
     % fit (I'm not sure if that would work mode by mode)
     if lerror
+        
+        %
+% %         xerror = sqrt(mean((xRes(lgood, i)).^2));
+        
+        %
         mCovmatrix = Gaux * ((xerror.^2) .* eye(ngood)) * Gaux';
         merror(:, i) = sqrt(diag(mCovmatrix));
     end
