@@ -1,5 +1,5 @@
 function wvhlen = cteN_wvhlen(wvfreq, N, lat0, D, nmd)
-% wvhlen = CTEN_WVHLEN(wvfreq, N, f, D, nmd)
+% wvhlen = CTEN_WVHLEN(wvfreq, N, lat0, D, nmd)
 %
 %   inputs
 %       - wvfreq: wave frequency (in cycles per day).
@@ -11,7 +11,9 @@ function wvhlen = cteN_wvhlen(wvfreq, N, lat0, D, nmd)
 %   outputs
 %       - wvhlen: horizontal wavelength (in meters).
 %
-%
+% Computes the mode "nmd" horizontal wavelength for a wave with
+% frequency "wvfreq", propagating at latitude "lat0" over water
+% depth "D" and constant buoyancy frequency "N".
 %
 % Olavo Badaro Marques, 28/Jun/2017.
 
