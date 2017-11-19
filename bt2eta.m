@@ -1,5 +1,5 @@
 function etabt = bt2eta(U, s, D, z, tfreq, ti)
-% etabt = BT2ETA(U, s, D, z)
+% etabt = BT2ETA(U, s, D, z, tfreq, ti)
 %
 %   inputs
 %       - U: upslope barotropic velocity (parallel
@@ -14,6 +14,8 @@ function etabt = bt2eta(U, s, D, z, tfreq, ti)
 %       - etabt: isopycnal displacement due to barotropic
 %                flow over a 1D linear slope.
 %
+% BT2ETA computes the isopycnal displacement caused by a tidal
+% barotropic flow across linearly sloping topography.
 %
 %   TO DO:
 %       - Check calculcation with complex numbers.
