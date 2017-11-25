@@ -12,4 +12,20 @@ function raySlope = iwCharacteristic(wvfreq, N2, f0)
 %
 % Olavo Badaro Marques, 24/Nov/2017.
 
-raySlope = abs( sqrt((wvfreq^2 - f0^2)/(N2 - wvfreq^2)) );
+
+%% Convert wave frequency from cycles per day to radians per second
+
+wvfreq = (2*pi/(24*3600))* wvfreq;
+
+
+%% Check if  N2 >= wvfreq^2 >= f0^2 (condition for a free wave)
+
+if ~( (sqrt(N2) >= wvfreq) && (wvfreq >= f0) )
+    error('Wave frequency is not bounded by N2 and f0.')
+end
+
+
+%% Compute (positive) tangent of the angle between the
+% internal wave characteristic and the horizontal
+
+raySlope = abs( sqrt((wvfreq.^2 - f0.^2) ./ (N2 - wvfreq.^2)) );
