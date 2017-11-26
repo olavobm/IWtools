@@ -9,14 +9,16 @@ function slopecritc = slopeCriticality(bottomSlope, wvfreq, N2, f0)
 %       - f0: Coriolis parameter (in radians per second).
 %
 %   outputs
-%       - slopecritc: ratio between bottom slope and
-%                     internal wave characteristic.
+%       - slopecritc: criticality of the bottom.
 %
-% The criticality is the ratio .... The criticality is classified as
+% The criticality is the ratio between the (linear) bottom slope and the
+% internal wave characteristic. The ranges of this parameters are:
 %       * slopecritc >> 1: supercritical.
 %       * slopecritc << 1: subcritical.
 %       * slopecritc ~ 1: critical.
 %
+% A supercritical (subcritical) slope reflects
+% the wave backwards (forward).
 %
 % Dependecies: iwCharacteristic.m
 %
