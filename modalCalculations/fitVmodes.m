@@ -93,6 +93,8 @@ end
 xRes = NaN(size(x, 1), n);
 fitR2 = NaN(1, n);
 
+mdsr2 = NaN(nmds, n);
+
 
 %% Do the modal fit:
 
@@ -132,6 +134,12 @@ for i = 1:n
     fitR2(i) = 1 - (sum(xRes(lgood, i).^2) ./ ...
                     sum((x(lgood, i) - mean(x(lgood, i))).^2));
     
+	% Compute the correlation squared between each mode and the data.
+    for i2 = 1:nmds
+        mdsr2(i2, i) = corr(x(lgood, i), ...
+                            mdsAmp(i2, i) .* Gmodes(:, i2)).^2;
+    end
+                
     % One could also use the misfit to calculate the error of the entire
     % fit (I'm not sure if that would work mode by mode)
     if lerror
@@ -147,9 +155,10 @@ for i = 1:n
     
 end
 
-%
+% Assign variables to error output structure
 fiterr.misfit = xRes;
 fiterr.R2 = fitR2;
+fiterr.mdsr2 = mdsr2;
 if lerror
     fiterr.merror = merror;
 end
