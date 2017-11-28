@@ -117,22 +117,18 @@ for i = 1:n
     
     % Project the ith column of x onto the normal modes:
     Gmodes = vmodes(lgood,  :);
-    
-    %
     Gaux = (Gmodes' * Gmodes) \ (Gmodes');
-    
-    %
     m = Gaux * x(lgood, i);
     
     % Assign m to ith column of mdsAmp:
     mdsAmp(:, i) = m;
     
-    %
+    % Calculate the residue (difference between data and fit)
     xRes(lgood, i) = (Gmodes * m) - x(lgood, i);
     
-    %
-    fitR2(i) = 1 - (sum(xRes(lgood, i).^2) ./ ...
-                    sum((x(lgood, i) - mean(x(lgood, i))).^2));
+% % %     %
+% % %     fitR2(i) = 1 - (sum(xRes(lgood, i).^2) ./ ...
+% % %                     sum((x(lgood, i) - mean(x(lgood, i))).^2));
     
 	% Compute the correlation squared between each mode and the data.
     for i2 = 1:nmds
@@ -157,7 +153,7 @@ end
 
 % Assign variables to error output structure
 fiterr.misfit = xRes;
-fiterr.R2 = fitR2;
+% % fiterr.R2 = fitR2;
 fiterr.mdsr2 = mdsr2;
 if lerror
     fiterr.merror = merror;
