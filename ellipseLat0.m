@@ -6,8 +6,8 @@ function vurto = ellipseLat0(lat0, wvfreq)
 %       - wvfreq: wave frequency (in cycles per day).
 %
 %   outputs
-%       - vurto: ratio magnitude between amplitude of the
-%                velocity components perpendicular and parallel
+%       - vurto: magnitude of the ratio between the amplitudes of
+%                the velocity components perpendicular and parallel
 %                to wave propoagation.
 %
 % From the equations of motion, inertia-gravity waves (barotropic or
