@@ -2,14 +2,15 @@ function C = btbcConversion(gradD, ubt, vbt, pp, avgpts)
 % C = BTBCCONVERSION(gradD, ubt, vbt, pp, avgpts)
 %
 %   inputs
-%       - gradD:
-%       - ubt:
-%       - vbt:
-%       - pp:
-%       - avgpts:
+%       - gradD: bathymetry gradient, with x/y derivatives
+%                as real/imaginary parts.
+%       - ubt: zonal barotropic velocity.
+%       - vbt: meridional   "       "
+%       - pp: pressure perturbation.
+%       - avgpts: number of points (in time) to compute wave-average.
 %
 %   outputs
-%       - C: conversion
+%       - C: conversion, in W/m2.
 %
 % TO DO:
 %   - modify to take complex number as inputs
