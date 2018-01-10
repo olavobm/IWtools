@@ -21,12 +21,11 @@ function [mdsAmp, vmodes, fiterr] = fitVmodes(z, x, vmodes, zmds, xerror)
 %                   * merror: error on each model parameter.
 %
 % Function FITVMODES project the data x onto the normal modes specified
-% by vmodes(i.e. each column of vmodes input represents a mode).
+% by vmodes (i.e. each column of vmodes input represents a mode).
 %
-% If vmodes are available in a different depth grid than x (i.e. if
-% observations of N2 are at different depths than the data x), please
-% specify zmds so the modes can be linearly interpolated to the z grid
-% associated with x.
+% If vmodes are available in a different depth grid than x, then
+% specify zmds so the modes can be linearly interpolated onto the
+% same z grid where is x given.
 %
 % Olavo Badaro Marques, 7/Nov/2016.
 
