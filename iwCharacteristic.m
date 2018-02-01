@@ -10,6 +10,8 @@ function raySlope = iwCharacteristic(wvfreq, N2, f0)
 %       - raySlope: tangent of the angle the wave characteristic
 %                   makes with the horizontal.
 %
+% Internal waves propagate diagonally in a medium. 
+%
 % Olavo Badaro Marques, 24/Nov/2017.
 
 
@@ -20,9 +22,9 @@ wvfreq = (2*pi/(24*3600))* wvfreq;
 
 %% Check if  N2 >= wvfreq^2 >= f0^2 (condition for a free wave)
 
-if ~( (sqrt(N2) >= wvfreq) && (wvfreq >= f0) )
-    error('Wave frequency is not bounded by N2 and f0.')
-end
+% % if ~( (sqrt(N2) >= wvfreq) && (wvfreq >= f0) )
+% %     error('Wave frequency is not bounded by N2 and f0.')
+% % end
 
 
 %% Compute (positive) tangent of the angle between the

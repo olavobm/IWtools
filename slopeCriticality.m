@@ -20,7 +20,7 @@ function slopecritc = slopeCriticality(bottomSlope, wvfreq, N2, f0)
 % A supercritical (subcritical) slope reflects
 % the wave backwards (forward).
 %
-% Dependecies: iwCharacteristic.m
+% See also: iwCharacteristic.m
 %
 % Olavo Badaro Marques, 24/Nov/2017.
 
