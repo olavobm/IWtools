@@ -53,6 +53,14 @@ Nlon = length(lon);
 [long, latg] = meshgrid(lon, lat);
 
 
+%% If cn is a number, then create an array
+% (correspondent with cn constant in space)
+
+if isscalar(cn)
+	cn = cn .* ones(Nlat, Nlon); 
+end
+
+
 %% Compute Coriolis parameter and its derivative (i.e. beta)
 
 %
