@@ -30,4 +30,4 @@ wvfreq = (2*pi/(24*3600))* wvfreq;
 %% Compute (positive) tangent of the angle between the
 % internal wave characteristic and the horizontal
 
-raySlope = abs( sqrt((wvfreq.^2 - f0.^2) ./ (N2 - wvfreq.^2)) );
+raySlope = sqrt((wvfreq.^2 - f0.^2) ./ (N2 - wvfreq.^2));
