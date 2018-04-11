@@ -71,7 +71,8 @@ zoutrhop = (zpp(1:end-1, 1) + zpp(2:end, 1)) ./ 2;
 
 %%
 
-rhop = - dpdz / g;
+rhop = dpdz / g;    % there is no minus sign because
+                    % depth increases downward
 
 
 %%
