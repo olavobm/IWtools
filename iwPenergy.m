@@ -65,8 +65,8 @@ end
 %% Compute potential energy density
 
 if lrhoeta
-    pe = (0.5*g^2/rho0) * (x.^2)./n2;
+    pe = (0.5*g^2/rho0) * (abs(x).^2)./n2;
 else
-    pe = (0.5*rho0) * (n2 .* x.^2);
+    pe = (0.5*rho0) * (n2 .* abs(x).^2);
 end
 

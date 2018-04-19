@@ -24,5 +24,5 @@ end
 
 %% Compute kinetic energy density
 
-ke = (rho0/2) * (u.^2 + v.^2);
+ke = (rho0/2) * (abs(u).^2 + abs(v).^2);
 
