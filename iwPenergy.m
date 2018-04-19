@@ -48,10 +48,17 @@ end
 
 %% N2 is a vector, turn it into a matrix of the same size as x
 
-% TO DO: IMPROVE MATCHING THE SIZE
+%
+if isscalar(n2)
+	
+    
+else
+    
+    % TO DO: IMPROVE MATCHING THE SIZE
 
-if ~isequal(size(n2), size(x))
-    n2 = repmat(n2, 1, size(x, 2), size(x, 3));
+    if ~isequal(size(n2), size(x))
+        n2 = repmat(n2, 1, size(x, 2), size(x, 3));
+    end
 end
 
 
