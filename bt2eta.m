@@ -1,14 +1,14 @@
-function etabt = bt2eta(U, s, D, z, tfreq, ti)
-% etabt = BT2ETA(U, s, D, z, tfreq, ti)
+function etabt = bt2eta(U, s, D, z, wvfreq, ti)
+% etabt = BT2ETA(U, s, D, z, wvfreq, ti)
 %
 %   inputs
 %       - U: upslope barotropic velocity (parallel
 %            to the bathymetry gradient).
 %       - s: (tangent) of the bottom slope.
 %       - D: water depth.
-%       - z: depth points to compute the calculation
-%       - tfreq:
-%       - ti:
+%       - z: depth points where the output is computed.
+%       - wvfreq: wave frequency (in radians per second).
+%       - ti: time correspondent to U.
 %
 %   outputs
 %       - etabt: isopycnal displacement due to barotropic
@@ -27,14 +27,14 @@ function etabt = bt2eta(U, s, D, z, tfreq, ti)
 
 if exist('ti', 'var')
 
-    coefaux = - (diff(U) ./ diff(ti)) ./ (tfreq^2);
+    coefaux = - (diff(U) ./ diff(ti)) ./ (wvfreq^2);
     
 else
    
-    coefaux = U/tfreq * exp(-1i.*pi/2);
+    coefaux = U/wvfreq * exp(-1i.*pi/2);
     
 end
 
 
-%
+% Compute the isopycnal displacement
 etabt =  s .* (z(:)./D) * coefaux;
