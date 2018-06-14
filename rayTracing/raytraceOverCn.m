@@ -1,5 +1,5 @@
-function [xyRay, cnRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
-% [xyRay, cnRay] = RAYTRACEOVERCN(lon, lat, cn, xya0, dtN)
+function [xyRay, cnRay, angRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
+% [xyRay, cnRay, angRay] = RAYTRACEOVERCN(lon, lat, cn, xya0, dtN)
 %
 %   inputs
 %       - lon: longitude vector of the domain.
@@ -12,6 +12,7 @@ function [xyRay, cnRay] = raytraceOverCn(lon, lat, cn, xya0, dtN)
 %   outputs
 %       - xzRay: Nx2 with N coordinates of the ray. The first row is xy0.
 %       - cnRay: Nx1 array with eigenspeeds along the ray.
+%       - angRay:
 %
 % RAYTRACEOVERCN traces a shallow-water wave ray over the eigenspeed
 % field "cn" specified at the rectangular grid defined by "lon" and
@@ -42,6 +43,7 @@ nsteps = dtN(2);
 %
 xyRay = NaN(nsteps+1, 2);
 cnRay = NaN(nsteps+1, 1);
+angRay = NaN(nsteps+1, 1);
 
 
 %%
@@ -142,6 +144,7 @@ pxpyNow = [ cos(rayAng)/cppt, ...
 %
 xyRay(1, :) = xyNow;
 cnRay(1) = cnpt;
+angRay(1) = rayAng;
 
 
 %%
@@ -168,6 +171,7 @@ for i = 1:nsteps
     
     % Assign new coordinates to output variable
     xyRay(i+1, :) = xyNow;
+    angRay(i+1) = rayAng;
     
 
     %% --------------------------------------------------------------------
@@ -207,67 +211,120 @@ for i = 1:nsteps
 	traceStep = (cgpt * dt) / 111000;
     
     
-    %% --------------------------------------------------------------------
+    %%
     
-    % For angles closer to ZONAL
-    if abs(tan(rayAng)) <= 2
-        
-%         if i>=51
-%             keyboard
-%         end
-        
-        %
-        dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
-        
-        % Equation (18) in Rainville's 2006
-        dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
-                     ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
-        if i==49
-            keyboard
-        end
-        %
-%         pxpyNow(2) = pxpyNow(2) + ( (111000*cos(xyNow(2))) * dpydxNow * (traceStep .* cos(rayAng)) );
-        pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
-        
-        %
-        pxpyNow(1) = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
-
-% %         if ~isreal(pxpyNow)
-% %             keyboard
-% %         end
-        
-	% For angles closer to MERIDIONAL
-    else
-        
-        %
-        dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
-        
-        % Two expressions are (should be) equivalent
+    %
+    dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+    dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
+    
+    % Equation (18) in Rainville's 2006
+    dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
+                 ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
+    
+	% Two expressions are (should be) equivalent
 % %         dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
-        dpxdyNow = - (pxpyNow(1)^2 + pxpyNow(2)^2) * (1/(cnpt*pxpyNow(2))) * dcndx;
+    dpxdyNow = - (pxpyNow(1)^2 + pxpyNow(2)^2) * (1/(cnpt*pxpyNow(2))) * dcndx;
+
+    if abs(tan(rayAng)) <= 2
+        %
+        py_aux = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+        px_aux = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);
         
         %
-        pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
-
-        %        
-        pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
-
+        l_zonaleqs = true;
+    else
+        %
+        px_aux = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+        py_aux =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
         
-% %         if ~isreal(pxpyNow)
-% %             keyboard
-% %         end
+        %
+        l_zonaleqs = false;
+    end
+    
+    %
+    if ~isreal(px_aux) || ~isreal(py_aux)
+     
+        %
+        if l_zonaleqs
+            
+            %
+            px_aux = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+            py_aux =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
+        else
+            %
+            py_aux = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+            px_aux = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);
+        end
         
     end
     
-
-    %% --------------------------------------------------------------------
-    
-    % Update the ray angle
-    try
-    rayAng = atan2(pxpyNow(2), pxpyNow(1));
-    catch
+    %
+    if ~isreal(px_aux) || ~isreal(py_aux)
+        warning('***oh no...***')
         keyboard
     end
+    
+    %
+    pxpyNow(1) = px_aux;
+    pxpyNow(2) = py_aux;
+    rayAng = atan2(pxpyNow(2), pxpyNow(1));
+   
+    
+% %     %% --------------------------------------------------------------------
+% %     
+% %     % For angles closer to ZONAL
+% %     if abs(tan(rayAng)) <= 2
+% %         
+% %         %
+% %         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+% %         
+% %         % Equation (18) in Rainville's 2006
+% %         dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
+% %                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
+% %         if i==49
+% %             keyboard
+% %         end
+% %         %
+% % %         pxpyNow(2) = pxpyNow(2) + ( (111000*cos(xyNow(2))) * dpydxNow * (traceStep .* cos(rayAng)) );
+% %         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+% %         
+% %         %
+% %         pxpyNow(1) = sign(cos(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(2)^2);   % SQRT WILL COMPLICATE WESTWARD TRAVELLING WAVES
+% % 
+% % % %         if ~isreal(pxpyNow)
+% % % %             keyboard
+% % % %         end
+% %         
+% % 	% For angles closer to MERIDIONAL
+% %     else
+% %         
+% %         %
+% %         dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
+% %         
+% %         % Two expressions are (should be) equivalent
+% % % %         dpxdyNow = - 1/(pxpyNow(2)*cppt^3) * (wvfreq/sqrt(wvfreq^2 - fpt^2)) * dcndx;
+% %         dpxdyNow = - (pxpyNow(1)^2 + pxpyNow(2)^2) * (1/(cnpt*pxpyNow(2))) * dcndx;
+% %         
+% %         %
+% %         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+% % 
+% %         %        
+% %         pxpyNow(2) =  sign(sin(rayAng)) * sqrt((1/cppt)^2 - pxpyNow(1)^2);
+% % 
+% %         
+% % % %         if ~isreal(pxpyNow)
+% % % %             keyboard
+% % % %         end
+% %         
+% %     end
+% %     
+% % 
+% %     %% --------------------------------------------------------------------
+% %     
+% %     % Update the ray angle
+% %     rayAng = atan2(pxpyNow(2), pxpyNow(1));
+    
+    
 
 end
 

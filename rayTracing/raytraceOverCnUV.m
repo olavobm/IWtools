@@ -1,5 +1,5 @@
 function [xyRay, cnRay, angRay] = raytraceOverCnUV(lon, lat, cn, U, V, xya0, dtN)
-% [xyRay, cnRay] = RAYTRACEOVERCNUV(lon, lat, cn, U, V, xya0, dtN)
+% [xyRay, cnRay, angRay] = RAYTRACEOVERCNUV(lon, lat, cn, U, V, xya0, dtN)
 %
 %   inputs
 %       - lon: longitude vector of the domain.
@@ -30,6 +30,7 @@ nsteps = dtN(2);
 %
 xyRay = NaN(nsteps+1, 2);
 cnRay = NaN(nsteps+1, 1);
+angRay = NaN(nsteps+1, 1);
 
 
 %%
@@ -228,59 +229,47 @@ for i = 1:nsteps
 	traceStep = (cgpt * dt) / 111000;
     
     
-    %% --------------------------------------------------------------------
+    %%
     
-    % For angles closer to ZONAL
+    %
+    dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+    dUdy = interp2(lon, lat, U_y, xyNow(1), xyNow(2));
+    dVdy = interp2(lon, lat, V_y, xyNow(1), xyNow(2));
+    
+    %
+    dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
+    dUdx = interp2(lon, lat, U_x, xyNow(1), xyNow(2));
+    dVdx = interp2(lon, lat, V_x, xyNow(1), xyNow(2));
+    
     if abs(tan(rayAng)) <= 2
-        
-        %
-        dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
-        dUdy = interp2(lon, lat, U_y, xyNow(1), xyNow(2));
-        dVdy = interp2(lon, lat, V_y, xyNow(1), xyNow(2));
-        
         % Equation (28) in RP 2006
         dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndy + ...
                         - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdy + ...
                         - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdy + ...
                         (2*fpt/(wvfreq^2))*bpt;
-        
+
         %
         dldx = 2*(cnpt^2 - Upt^2)*pxpyNow(1) + 2*Upt - 2*Upt*Vpt*pxpyNow(2);
         dldx = 1/dldx;
-        
+
         % Equation (27)
         dpydxNow = - dHdy * dldx;
 
         %
-        pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
-        
-% %         if i>804
-% %             keyboard
-% %         end
-        
-        %
-        pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)), pxpyNow(1), i);
+        py_aux = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
 
-% %         if i>804
-% %             keyboard
-% %         end
+        %
+        px_aux = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)), pxpyNow(1), i);
+            
+        %
+        l_zonaleqs = true;
         
-        if ~isreal(pxpyNow)
-            keyboard
-        end
-        
-	% For angles closer to MERIDIONAL
     else
         
         %
-        dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
-        dUdx = interp2(lon, lat, U_x, xyNow(1), xyNow(2));
-        dVdx = interp2(lon, lat, V_x, xyNow(1), xyNow(2));
-        
-        %
         dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndx + ...
-                        - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdx + ...
-                        - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdx;
+                    - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdx + ...
+                    - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdx;
         
         %
         dldy = 2*(cnpt^2 - Vpt^2)*pxpyNow(2) + 2*Vpt - 2*Upt*Vpt*pxpyNow(1);
@@ -290,42 +279,173 @@ for i = 1:nsteps
         dpxdyNow = - dHdy * dldy;
         
         %
-        pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+        px_aux = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
 
         %        
-        pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)), pxpyNow(2), i);
-
+        py_aux = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)), pxpyNow(2), i);
         
-        if ~isreal(pxpyNow)
-            keyboard
-        end
+        %
+        l_zonaleqs = false;
         
     end
     
-% %     if i>804
-% %         keyboard
-% %     end
-
-    %% --------------------------------------------------------------------
-    
-% %     % As I understand the ratio cgy/cgx should be the equal to dy/dx.
-% %     % But then I get different results.
-% %     cgx = (pxpyNow(1)*(cnpt^2 - Upt^2) + wvfreq*Upt - Upt*Vpt*pxpyNow(2)) / ...
-% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
-% %                 
-% % 	cgy = (pxpyNow(2)*(cnpt^2 - Vpt^2) + wvfreq*Vpt - Upt*Vpt*pxpyNow(1)) / ...
-% %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
-
     %
+    if ~isreal(px_aux) || ~isreal(py_aux)
+        
+        %
+        if l_zonaleqs
+            
+            %
+            dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndx + ...
+                        - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdx + ...
+                        - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdx;
+            %
+            dldy = 2*(cnpt^2 - Vpt^2)*pxpyNow(2) + 2*Vpt - 2*Upt*Vpt*pxpyNow(1);
+            dldy = 1/dldy;
+            dpxdyNow = - dHdy * dldy;
+
+            %
+            px_aux = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );    
+            py_aux = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)), pxpyNow(2), i);
+
+            
+        else
+            
+            % Equation (28) in RP 2006
+            dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndy + ...
+                            - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdy + ...
+                            - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdy + ...
+                            (2*fpt/(wvfreq^2))*bpt;
+
+            %
+            dldx = 2*(cnpt^2 - Upt^2)*pxpyNow(1) + 2*Upt - 2*Upt*Vpt*pxpyNow(2);
+            dldx = 1/dldx;
+            dpydxNow = - dHdy * dldx;
+
+            %
+            py_aux = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+            px_aux = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)), pxpyNow(1), i);
+            
+        end
+        
+    end
+	
+    %
+    if ~isreal(px_aux) || ~isreal(py_aux)
+        warning('***oh no...***')
+        keyboard
+    end
+    
+    %
+    pxpyNow(1) = px_aux;
+    pxpyNow(2) = py_aux;
+    
     dy = 2 * ((cnpt^2 - Vpt^2)*pxpyNow(2) + Vpt - Upt*Vpt*pxpyNow(1));
     dx = 2 * ((cnpt^2 - Upt^2)*pxpyNow(1) + Upt - Upt*Vpt*pxpyNow(2));
-
-	% Update the ray angle
-    rayAng = atan2(dy, dx);
     
-% % %     % Update the ray angle - THIS IS NOT TRUE FOR THE CASE WITH CURRENTS!!!
-% % %     % (EQUATIONS 30, 31 IN RP2006)
-% % %     rayAng = atan2(pxpyNow(2), pxpyNow(1));
+    %
+    rayAng = atan2(dy, dx);
+                
+                
+                
+    %% --------------------------------------------------------------------
+    
+% % %     % For angles closer to ZONAL
+% % %     if abs(tan(rayAng)) <= 2
+% % % 
+% % %         %
+% % %         dcndy = interp2(lon, lat, cn_y, xyNow(1), xyNow(2));
+% % %         dUdy = interp2(lon, lat, U_y, xyNow(1), xyNow(2));
+% % %         dVdy = interp2(lon, lat, V_y, xyNow(1), xyNow(2));
+% % % 
+% % %         % Equation (28) in RP 2006
+% % %         dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndy + ...
+% % %                         - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdy + ...
+% % %                         - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdy + ...
+% % %                         (2*fpt/(wvfreq^2))*bpt;
+% % % 
+% % %         %
+% % %         dldx = 2*(cnpt^2 - Upt^2)*pxpyNow(1) + 2*Upt - 2*Upt*Vpt*pxpyNow(2);
+% % %         dldx = 1/dldx;
+% % % 
+% % %         % Equation (27)
+% % %         dpydxNow = - dHdy * dldx;
+% % % 
+% % %         %
+% % %         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
+% % % 
+% % % % %         if i>804
+% % % % %             keyboard
+% % % % %         end
+% % % 
+% % %         %
+% % %         pxpyNow(1) = solve4otherP(fpt, wvfreq, cnpt, Upt, Vpt, pxpyNow(2), sign(cos(rayAng)), pxpyNow(1), i);
+% % % 
+% % % % %         if i>804
+% % % % %             keyboard
+% % % % %         end
+% % % 
+% % %         if ~isreal(pxpyNow)
+% % %             keyboard
+% % %         end
+% % % 
+% % %     % For angles closer to MERIDIONAL
+% % %     else
+% % % 
+% % %         %
+% % %         dcndx = interp2(lon, lat, cn_x, xyNow(1), xyNow(2));
+% % %         dUdx = interp2(lon, lat, U_x, xyNow(1), xyNow(2));
+% % %         dVdx = interp2(lon, lat, V_x, xyNow(1), xyNow(2));
+% % % 
+% % %         %
+% % %         dHdy = 2*cnpt*(pxpyNow(1)^2 + pxpyNow(2)^2)*dcndx + ...
+% % %                         - 2*(Upt*pxpyNow(1)^2 - pxpyNow(1) + Vpt*pxpyNow(1)*pxpyNow(2))*dUdx + ...
+% % %                         - 2*(Vpt*pxpyNow(2)^2 - pxpyNow(2) + Upt*pxpyNow(1)*pxpyNow(2))*dVdx;
+% % % 
+% % %         %
+% % %         dldy = 2*(cnpt^2 - Vpt^2)*pxpyNow(2) + 2*Vpt - 2*Upt*Vpt*pxpyNow(1);
+% % %         dldy = 1/dldy;
+% % % 
+% % %         %
+% % %         dpxdyNow = - dHdy * dldy;
+% % % 
+% % %         %
+% % %         pxpyNow(1) = pxpyNow(1) + ( 111000 * dpxdyNow * (traceStep .* sin(rayAng)) );
+% % % 
+% % %         %        
+% % %         pxpyNow(2) = solve4otherP(fpt, wvfreq, cnpt, Vpt, Upt, pxpyNow(1), sign(sin(rayAng)), pxpyNow(2), i);
+% % % 
+% % % 
+% % %         if ~isreal(pxpyNow)
+% % %             keyboard
+% % %         end
+% % % 
+% % %     end
+% % % 
+% % % % %     if i>804
+% % % % %         keyboard
+% % % % %     end
+% % % 
+% % %     %% --------------------------------------------------------------------
+% % % 
+% % % % %     % As I understand the ratio cgy/cgx should be the equal to dy/dx.
+% % % % %     % But then I get different results.
+% % % % %     cgx = (pxpyNow(1)*(cnpt^2 - Upt^2) + wvfreq*Upt - Upt*Vpt*pxpyNow(2)) / ...
+% % % % %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
+% % % % %                 
+% % % % % 	cgy = (pxpyNow(2)*(cnpt^2 - Vpt^2) + wvfreq*Vpt - Upt*Vpt*pxpyNow(1)) / ...
+% % % % %                     (wvfreq - Upt*pxpyNow(1) - Vpt*pxpyNow(2));
+% % % 
+% % %     %
+% % %     dy = 2 * ((cnpt^2 - Vpt^2)*pxpyNow(2) + Vpt - Upt*Vpt*pxpyNow(1));
+% % %     dx = 2 * ((cnpt^2 - Upt^2)*pxpyNow(1) + Upt - Upt*Vpt*pxpyNow(2));
+% % % 
+% % %     % Update the ray angle
+% % %     rayAng = atan2(dy, dx);
+% % % 
+% % % % % %     % Update the ray angle - THIS IS NOT TRUE FOR THE CASE WITH CURRENTS!!!
+% % % % % %     % (EQUATIONS 30, 31 IN RP2006)
+% % % % % %     rayAng = atan2(pxpyNow(2), pxpyNow(1));
 
     
 end
@@ -347,11 +467,7 @@ function p2 = solve4otherP(fpt, wvfreq, cnpt, u1, u2, p1, signP2, p2i, i)
     %
     p2_1 = (- b - sqrt(b^2 - 4*a*c)) / (2*a);
     p2_2 = (- b + sqrt(b^2 - 4*a*c)) / (2*a);
-
-% %     if i>=825
-% %         keyboard
-% %     end
-% %     
+  
     %
     if sign(p2_1)==signP2
         p2 = p2_1;
