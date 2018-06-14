@@ -222,7 +222,9 @@ for i = 1:nsteps
         % Equation (18) in Rainville's 2006
         dpydxNow = - (1 / ((cnpt * wvfreq)^2 * pxpyNow(1))) * ...
                      ( (pxpyNow(1)^2 + pxpyNow(2)^2)*(cnpt*dcndy)*wvfreq^2  + fpt*bpt);
-        
+        if i==49
+            keyboard
+        end
         %
 %         pxpyNow(2) = pxpyNow(2) + ( (111000*cos(xyNow(2))) * dpydxNow * (traceStep .* cos(rayAng)) );
         pxpyNow(2) = pxpyNow(2) + ( (111000) * dpydxNow * (traceStep .* cos(rayAng)) );
@@ -261,7 +263,11 @@ for i = 1:nsteps
     %% --------------------------------------------------------------------
     
     % Update the ray angle
+    try
     rayAng = atan2(pxpyNow(2), pxpyNow(1));
+    catch
+        keyboard
+    end
 
 end
 
