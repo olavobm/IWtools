@@ -1,5 +1,5 @@
-function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
-%% [pp, psurf] = ETA2PP(z, eta, N2, zN2, rho0)
+function [pp, psurf] = eta2pp(z, eta, N2, zN2)
+%% [pp, psurf] = ETA2PP(z, eta, N2, zN2)
 %
 %  inputs
 %    - z: vector of the data points depths in meters. Depth is greater
@@ -9,7 +9,6 @@ function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
 %          vector, it is applied everywhen in eta.
 %    - zN2 (optional): depth where N2 is specified. If not given, code
 %                      assumes N2 is given at the same depth as eta.
-%    - rho0 (optional): reference potential density (default is 1025).
 %
 %  outputs
 %    - pp: pressure perturbartion.
@@ -32,9 +31,7 @@ function [pp, psurf] = eta2pp(z, eta, N2, zN2, rho0)
 
 %% Define default value for reference density:
 
-if ~exist('rho0', 'var')
-    rho0 = 1025;
-end
+rho0 = 1025;
 
 
 %% If input zN2 is given, then interpolate N2 to the same depths as eta:
