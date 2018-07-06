@@ -127,23 +127,27 @@ if ~isempty(cNanNoRep)
     
     for i = 1:size(rhopg(:, cNanNoRep), 2)
         
+        %
         lgood = ~isnan(rhopg(:, cNanNoRep(i)));
         zgood = z(lgood);
-        intRho(lgood, cNanNoRep(i)) = cumtrapz(zgood, rhopg(lgood, cNanNoRep(i)));
-        try
-        Dzrange(i) = zgood(end)-zgood(1);
-        catch
-            keyboard
+        
+        %
+        if any(lgood)
+            intRho(lgood, cNanNoRep(i)) = cumtrapz(zgood, rhopg(lgood, cNanNoRep(i)));
+            try
+            Dzrange(i) = zgood(end)-zgood(1);
+            catch
+                keyboard
+            end
+            % Boundary condition:
+            psurf(1, cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
+
+            % NEED TO DEAL WITH NANS PROPERLY!!!!
+
+            % Compute the pressure perturbation (no need to use repmat
+            % since we are dealing with profiles individually):
+            pp(lgood, cNanNoRep(i)) = psurf(1, cNanNoRep(i)) + intRho(lgood, cNanNoRep(i));
         end
-        % Boundary condition:
-        psurf(1, cNanNoRep(i)) = pptop(cNanNoRep(i)) - (1/Dzrange(i)) .* trapz(zgood, intRho(lgood, cNanNoRep(i)));
-        
-        % NEED TO DEAL WITH NANS PROPERLY!!!!
-        
-        % Compute the pressure perturbation (no need to use repmat
-        % since we are dealing with profiles individually):
-        pp(lgood, cNanNoRep(i)) = psurf(1, cNanNoRep(i)) + intRho(lgood, cNanNoRep(i));
-        
     end
     
 end
